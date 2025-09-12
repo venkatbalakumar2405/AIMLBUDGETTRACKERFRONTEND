@@ -13,11 +13,11 @@ function App() {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
-      maximumFractionDigits: 0, // no decimals
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
-  // Load from localStorage on first render
+  // Load from localStorage
   useEffect(() => {
     const savedSalary = localStorage.getItem("salary");
     const savedExpenses = localStorage.getItem("expenses");
@@ -26,12 +26,12 @@ function App() {
     if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
   }, []);
 
-  // Save salary to localStorage when updated
+  // Save salary
   useEffect(() => {
     localStorage.setItem("salary", salary);
   }, [salary]);
 
-  // Save expenses to localStorage when updated
+  // Save expenses
   useEffect(() => {
     localStorage.setItem("expenses", JSON.stringify(expenses));
   }, [expenses]);
@@ -70,7 +70,7 @@ function App() {
     }
   };
 
-  // 🔹 Export data to CSV with INR symbol
+  // 🔹 Export data to CSV with INR
   const downloadCSV = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += `Salary,${salary} (INR)\n\n`;
@@ -105,7 +105,7 @@ function App() {
         onDelete={deleteExpense}
       />
 
-      {/* ✅ Pass formatted INR values */}
+      {/* ✅ Show formatted INR values */}
       <Balance
         salary={formatCurrency(salary)}
         expenses={formatCurrency(totalExpenses)}
