@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Login from "./components/login";
+import AuthForm from "./components/AuthForm";
 import App from "./App"; // Budget Tracker
 
 function MainApp() {
@@ -12,7 +12,7 @@ function MainApp() {
     }
   }, []);
 
-  const handleLogin = (email) => {
+  const handleAuth = (email) => {
     setUser(email);
     localStorage.setItem("user", email);
   };
@@ -25,10 +25,10 @@ function MainApp() {
   return (
     <>
       {!user ? (
-        <Login onLogin={handleLogin} />
+        <AuthForm onAuth={handleAuth} />
       ) : (
         <div>
-          {/* Header */}
+          {/* ✅ Header with Logout */}
           <div className="flex justify-between items-center p-4 bg-blue-600 text-white">
             <h2 className="font-semibold">Welcome, {user}</h2>
             <button
@@ -39,7 +39,7 @@ function MainApp() {
             </button>
           </div>
 
-          {/* Budget App */}
+          {/* ✅ Budget Tracker */}
           <App />
         </div>
       )}
