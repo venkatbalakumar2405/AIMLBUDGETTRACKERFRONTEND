@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import SalaryForm from "./components/SalaryForm";
-import ExpenseForm from "./ExpenseForm";
-import ExpenseList from "./ExpenseList";
-import Balance from "./Balance";
+import ExpenseForm from "./components/ExpenseForm";
+import ExpenseList from "./components/ExpenseList";
+import Balance from "./components/Balance";
 
 function App() {
   const [salary, setSalary] = useState(0);
@@ -17,7 +17,7 @@ function App() {
     }).format(value);
   };
 
-  // Load from localStorage
+  // Load saved data
   useEffect(() => {
     const savedSalary = localStorage.getItem("salary");
     const savedExpenses = localStorage.getItem("expenses");
@@ -26,27 +26,23 @@ function App() {
     if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
   }, []);
 
-  // Save salary
+  // Save to localStorage
   useEffect(() => {
     localStorage.setItem("salary", salary);
   }, [salary]);
 
-  // Save expenses
   useEffect(() => {
     localStorage.setItem("expenses", JSON.stringify(expenses));
   }, [expenses]);
 
-  // Add or update salary
-  const handleSalary = (amount) => {
-    setSalary(Number(amount));
-  };
+  // Salary handler
+  const handleSalary = (amount) => setSalary(Number(amount));
 
-  // Add new expense
+  // Expense handlers
   const addExpense = (expense) => {
     setExpenses([...expenses, { ...expense, id: Date.now() }]);
   };
 
-  // Update expense
   const updateExpense = (id, updatedExpense) => {
     setExpenses(
       expenses.map((expense) =>
@@ -55,12 +51,11 @@ function App() {
     );
   };
 
-  // Delete expense
   const deleteExpense = (id) => {
     setExpenses(expenses.filter((expense) => expense.id !== id));
   };
 
-  // 🔹 Clear all data
+  // Reset all
   const resetAll = () => {
     if (window.confirm("Are you sure you want to clear all data?")) {
       localStorage.removeItem("salary");
@@ -70,7 +65,7 @@ function App() {
     }
   };
 
-  // 🔹 Export data to CSV with INR
+  // Export CSV
   const downloadCSV = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += `Salary,${salary} (INR)\n\n`;
@@ -105,14 +100,14 @@ function App() {
         onDelete={deleteExpense}
       />
 
-      {/* ✅ Show formatted INR values */}
+      {/* ✅ Pass formatted INR values */}
       <Balance
         salary={formatCurrency(salary)}
         expenses={formatCurrency(totalExpenses)}
         balance={formatCurrency(balance)}
       />
 
-      {/* 🔹 Action Buttons */}
+      {/* Action Buttons */}
       <div style={{ textAlign: "center", marginTop: "20px" }}>
         <button className="reset-btn" onClick={resetAll}>
           🗑️ Clear All Data

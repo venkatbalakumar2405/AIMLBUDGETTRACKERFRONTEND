@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AuthForm from "./components/AuthForm";
-import App from "./App"; // Budget Tracker
+import App from "./App";
 
 function MainApp() {
   const [user, setUser] = useState(null);
@@ -28,7 +28,7 @@ function MainApp() {
         <AuthForm onAuth={handleAuth} />
       ) : (
         <div>
-          {/* ✅ Header with Logout */}
+          {/* Header */}
           <div className="flex justify-between items-center p-4 bg-blue-600 text-white">
             <h2 className="font-semibold">Welcome, {user}</h2>
             <button
@@ -39,7 +39,7 @@ function MainApp() {
             </button>
           </div>
 
-          {/* ✅ Budget Tracker */}
+          {/* Budget Tracker */}
           <App />
         </div>
       )}
