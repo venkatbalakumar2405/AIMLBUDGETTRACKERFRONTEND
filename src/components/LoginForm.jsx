@@ -7,29 +7,28 @@ function LoginForm({ onLogin }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (savedUser && savedUser.email === email && savedUser.password === password) {
+    // Simple validation
+    if (email === "test@test.com" && password === "1234") {
       alert("✅ Login successful!");
-      onLogin(true);
+      onLogin(true); // <-- This sets isAuthenticated = true in App.jsx
     } else {
       alert("❌ Invalid credentials!");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form">
+    <form className="form" onSubmit={handleSubmit}>
       <h2>🔑 Login</h2>
-      <label>Email:</label>
       <input
         type="email"
+        placeholder="Enter email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
       />
-      <label>Password:</label>
       <input
         type="password"
+        placeholder="Enter password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required

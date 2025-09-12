@@ -29,7 +29,6 @@ function App() {
               📝 Sign Up
             </button>
           </div>
-
           {/* Render Form */}
           {showLogin ? (
             <LoginForm onLogin={setIsAuthenticated} />
