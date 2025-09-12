@@ -1,18 +1,22 @@
 import React, { useState } from "react";
+import {
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  IconButton,
+  TextField,
+  Button,
+} from "@mui/material";
+import { Edit, Delete, Save, Cancel } from "@mui/icons-material";
 
-function ExpenseList({ expenses, onUpdate, onDelete }) {
+export default function ExpenseList({ expenses, onUpdate, onDelete }) {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
   const [editAmount, setEditAmount] = useState("");
-
-  // ✅ Currency formatter (INR)
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const startEditing = (expense) => {
     setEditingId(expense.id);
@@ -26,43 +30,73 @@ function ExpenseList({ expenses, onUpdate, onDelete }) {
   };
 
   return (
-    <div className="list">
-      <h2>Expenses</h2>
+    <Paper elevation={3} sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        📋 Expense List
+      </Typography>
       {expenses.length === 0 ? (
-        <p>No expenses added yet.</p>
+        <Typography variant="body2">No expenses added yet.</Typography>
       ) : (
-        expenses.map((expense) => (
-          <div key={expense.id} className="expense-item">
-            {editingId === expense.id ? (
-              <>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                />
-                <input
-                  type="number"
-                  value={editAmount}
-                  onChange={(e) => setEditAmount(e.target.value)}
-                />
-                <button onClick={() => saveEdit(expense.id)}>Save</button>
-                <button onClick={() => setEditingId(null)}>Cancel</button>
-              </>
-            ) : (
-              <>
-                {/* ✅ Show INR instead of $ */}
-                <span>
-                  {expense.name} - {formatCurrency(expense.amount)}
-                </span>
-                <button onClick={() => startEditing(expense)}>Edit</button>
-                <button onClick={() => onDelete(expense.id)}>Delete</button>
-              </>
-            )}
-          </div>
-        ))
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>Name</strong></TableCell>
+              <TableCell><strong>Amount (INR)</strong></TableCell>
+              <TableCell align="right"><strong>Actions</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {expenses.map((expense) => (
+              <TableRow key={expense.id}>
+                <TableCell>
+                  {editingId === expense.id ? (
+                    <TextField
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      size="small"
+                    />
+                  ) : (
+                    expense.name
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingId === expense.id ? (
+                    <TextField
+                      type="number"
+                      value={editAmount}
+                      onChange={(e) => setEditAmount(e.target.value)}
+                      size="small"
+                    />
+                  ) : (
+                    `₹${expense.amount}`
+                  )}
+                </TableCell>
+                <TableCell align="right">
+                  {editingId === expense.id ? (
+                    <>
+                      <IconButton color="success" onClick={() => saveEdit(expense.id)}>
+                        <Save />
+                      </IconButton>
+                      <IconButton color="error" onClick={() => setEditingId(null)}>
+                        <Cancel />
+                      </IconButton>
+                    </>
+                  ) : (
+                    <>
+                      <IconButton color="primary" onClick={() => startEditing(expense)}>
+                        <Edit />
+                      </IconButton>
+                      <IconButton color="error" onClick={() => onDelete(expense.id)}>
+                        <Delete />
+                      </IconButton>
+                    </>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
-    </div>
+    </Paper>
   );
 }
-
-export default ExpenseList;

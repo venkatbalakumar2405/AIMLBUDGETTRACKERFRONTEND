@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { TextField, Button, Paper, Typography } from "@mui/material";
 
-function ExpenseForm({ onSubmit }) {
+export default function ExpenseForm({ onSubmit }) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
 
@@ -14,29 +15,32 @@ function ExpenseForm({ onSubmit }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form">
-      <label>Expense Name:</label>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-      />
-
-      <label>Amount:</label>
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <span style={{ marginRight: "5px" }}>₹</span>
-        <input
+    <Paper elevation={3} sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        ➕ Add Expense
+      </Typography>
+      <form onSubmit={handleSubmit}>
+        <TextField
+          label="Expense Name"
+          fullWidth
+          margin="normal"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <TextField
+          label="Amount (INR)"
           type="number"
+          fullWidth
+          margin="normal"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           required
         />
-      </div>
-
-      <button type="submit">Add Expense</button>
-    </form>
+        <Button variant="contained" color="success" fullWidth type="submit" sx={{ mt: 1 }}>
+          Add Expense
+        </Button>
+      </form>
+    </Paper>
   );
 }
-
-export default ExpenseForm;

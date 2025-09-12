@@ -1,36 +1,64 @@
 import React, { useState } from "react";
+import { Box, TextField, Button, Typography, Paper } from "@mui/material";
 
-function SignUpForm({ onSignUp }) {
-  const [email, setEmail] = useState("");
+export default function SignUpForm({ onSignUp }) {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    alert("✅ Account created successfully!");
-    onSignUp(); // After signup, go back to login
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+    const users = JSON.parse(localStorage.getItem("users")) || {};
+    if (users[username]) {
+      alert("User already exists!");
+      return;
+    }
+    users[username] = { password, salary: 0, expenses: [] };
+    localStorage.setItem("users", JSON.stringify(users));
+    alert("Account created successfully! Please login.");
+    onSignUp();
   };
 
   return (
-    <form className="form" onSubmit={handleSubmit}>
-      <h2>📝 Sign Up</h2>
-      <input
-        type="email"
-        placeholder="Enter email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <input
-        type="password"
-        placeholder="Enter password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-      <button type="submit">Sign Up</button>
-    </form>
+    <Paper elevation={4} sx={{ maxWidth: 400, mx: "auto", mt: 8, p: 4 }}>
+      <Typography variant="h5" textAlign="center" gutterBottom>
+        📝 Sign Up
+      </Typography>
+      <form onSubmit={handleSubmit}>
+        <TextField
+          label="Username"
+          fullWidth
+          margin="normal"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+        />
+        <TextField
+          label="Password"
+          type="password"
+          fullWidth
+          margin="normal"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <TextField
+          label="Confirm Password"
+          type="password"
+          fullWidth
+          margin="normal"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+        />
+        <Button variant="contained" fullWidth type="submit" sx={{ mt: 2 }}>
+          Sign Up
+        </Button>
+      </form>
+    </Paper>
   );
 }
-
-export default SignUpForm;
