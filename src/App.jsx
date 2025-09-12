@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import SalaryForm from "./components/SalaryForm";
-import ExpenseForm from "./components/ExpenseForm";
-import ExpenseList from "./components/ExpenseList";
-import Balance from "./components/Balance";
-
+import SalaryForm from "./SalaryForm";
+import ExpenseForm from "./ExpenseForm";
+import ExpenseList from "./ExpenseList";
+import Balance from "./Balance";
 function App() {
   const [salary, setSalary] = useState(0);
   const [expenses, setExpenses] = useState([]);
