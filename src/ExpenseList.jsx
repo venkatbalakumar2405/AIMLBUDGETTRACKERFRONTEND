@@ -5,6 +5,15 @@ function ExpenseList({ expenses, onUpdate, onDelete }) {
   const [editName, setEditName] = useState("");
   const [editAmount, setEditAmount] = useState("");
 
+  // ✅ Currency formatter (INR)
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
   const startEditing = (expense) => {
     setEditingId(expense.id);
     setEditName(expense.name);
@@ -41,7 +50,10 @@ function ExpenseList({ expenses, onUpdate, onDelete }) {
               </>
             ) : (
               <>
-                <span>{expense.name} - ${expense.amount}</span>
+                {/* ✅ Show INR instead of $ */}
+                <span>
+                  {expense.name} - {formatCurrency(expense.amount)}
+                </span>
                 <button onClick={() => startEditing(expense)}>Edit</button>
                 <button onClick={() => onDelete(expense.id)}>Delete</button>
               </>

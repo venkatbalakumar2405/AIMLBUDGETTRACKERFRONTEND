@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from "react";
-import SalaryForm from "./SalaryForm";
+import SalaryForm from "./components/SalaryForm";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
+
 function App() {
   const [salary, setSalary] = useState(0);
   const [expenses, setExpenses] = useState([]);
+
+  // ✅ Currency formatter (INR)
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0, // no decimals
+    }).format(value);
+  };
 
   // Load from localStorage on first render
   useEffect(() => {
@@ -60,25 +70,22 @@ function App() {
     }
   };
 
-  // 🔹 Export data to CSV
+  // 🔹 Export data to CSV with INR symbol
   const downloadCSV = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += `Salary,${salary}\n\n`;
-    csvContent += "Expense Name,Amount\n";
+    csvContent += `Salary,${salary} (INR)\n\n`;
+    csvContent += "Expense Name,Amount (INR)\n";
 
     expenses.forEach((exp) => {
       csvContent += `${exp.name},${exp.amount}\n`;
     });
 
-    csvContent += `\nTotal Expenses,${expenses.reduce(
-      (acc, curr) => acc + curr.amount,
-      0
-    )}\nBalance,${salary - expenses.reduce((acc, curr) => acc + curr.amount, 0)}\n`;
+    csvContent += `\nTotal Expenses,${totalExpenses}\nBalance,${balance}\n`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "budget_tracker.csv");
+    link.setAttribute("download", "budget_tracker_inr.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -97,7 +104,13 @@ function App() {
         onUpdate={updateExpense}
         onDelete={deleteExpense}
       />
-      <Balance salary={salary} expenses={totalExpenses} balance={balance} />
+
+      {/* ✅ Pass formatted INR values */}
+      <Balance
+        salary={formatCurrency(salary)}
+        expenses={formatCurrency(totalExpenses)}
+        balance={formatCurrency(balance)}
+      />
 
       {/* 🔹 Action Buttons */}
       <div style={{ textAlign: "center", marginTop: "20px" }}>

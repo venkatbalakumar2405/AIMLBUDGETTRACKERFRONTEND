@@ -22,13 +22,18 @@ function ExpenseForm({ onSubmit }) {
         onChange={(e) => setName(e.target.value)}
         required
       />
+
       <label>Amount:</label>
-      <input
-        type="number"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        required
-      />
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <span style={{ marginRight: "5px" }}>₹</span>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          required
+        />
+      </div>
+
       <button type="submit">Add Expense</button>
     </form>
   );
