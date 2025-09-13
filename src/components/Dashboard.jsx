@@ -11,6 +11,7 @@ import SalaryForm from "./SalaryForm";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
+import BarChartExpenses from "./BarChartExpenses";
 
 function Dashboard({
   currentUser,
@@ -25,6 +26,23 @@ function Dashboard({
   resetAll,
   logout,
 }) {
+  // ✅ Moved here (not inside JSX)
+  const downloadCSV = async () => {
+    const token = localStorage.getItem("token");
+    const response = await fetch("http://127.0.0.1:5000/budget/download-expenses-csv", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "expenses.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
@@ -65,14 +83,21 @@ function Dashboard({
         <Grid item xs={12} md={8}>
           <ExpenseForm onSubmit={addExpense} />
           <Divider sx={{ my: 2 }} />
-          <ExpenseList expenses={expenses} onUpdate={updateExpense} onDelete={deleteExpense} />
+          <ExpenseList
+            expenses={expenses}
+            onUpdate={updateExpense}
+            onDelete={deleteExpense}
+          />
         </Grid>
       </Grid>
 
       {/* Footer */}
       <Box sx={{ textAlign: "center", mt: 3 }}>
-        <Button variant="outlined" color="warning" onClick={resetAll}>
+        <Button variant="outlined" color="warning" onClick={resetAll} sx={{ mr: 2 }}>
           🗑️ Clear All Data
+        </Button>
+        <Button variant="contained" color="primary" onClick={downloadCSV}>
+          📥 Download CSV
         </Button>
       </Box>
     </Box>
