@@ -1,19 +1,20 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, Paper } from "@mui/material";
+import { TextField, Button, Typography, Paper } from "@mui/material";
 
-export default function LoginForm({ onLogin }) {
+function LoginForm({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const users = JSON.parse(localStorage.getItem("users")) || {};
+
     if (users[username] && users[username].password === password) {
-      localStorage.setItem("isLoggedIn", true);
+      localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("currentUser", username);
-      onLogin(username);
+      onLogin(true);
     } else {
-      alert("Invalid credentials. Try again!");
+      alert("Invalid username or password");
     }
   };
 
@@ -47,3 +48,5 @@ export default function LoginForm({ onLogin }) {
     </Paper>
   );
 }
+
+export default LoginForm;

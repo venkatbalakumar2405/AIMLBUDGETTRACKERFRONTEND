@@ -1,33 +1,29 @@
 import React, { useState } from "react";
-import { TextField, Button, Paper, Typography } from "@mui/material";
+import { Box, TextField, Button } from "@mui/material";
 
-export default function SalaryForm({ salary, onSubmit }) {
-  const [amount, setAmount] = useState(salary || 0);
+function SalaryForm({ salary, onSubmit }) {
+  const [amount, setAmount] = useState(salary);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(amount);
+    onSubmit(Number(amount));
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        💵 Set Your Salary
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <TextField
-          label="Monthly Salary (INR)"
-          type="number"
-          fullWidth
-          margin="normal"
-          value={amount}
-          onChange={(e) => setAmount(Number(e.target.value))}
-          required
-        />
-        <Button variant="contained" fullWidth type="submit" sx={{ mt: 1 }}>
-          Save Salary
-        </Button>
-      </form>
-    </Paper>
+    <Box component="form" onSubmit={handleSubmit} sx={{ mb: 2 }}>
+      <TextField
+        label="Set Salary"
+        type="number"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        fullWidth
+        sx={{ mb: 2 }}
+      />
+      <Button type="submit" variant="contained" fullWidth>
+        Save Salary
+      </Button>
+    </Box>
   );
 }
+
+export default SalaryForm; 

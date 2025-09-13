@@ -12,7 +12,7 @@ import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
 
-export default function Dashboard({
+function Dashboard({
   currentUser,
   salary,
   expenses,
@@ -78,3 +78,5 @@ export default function Dashboard({
     </Box>
   );
 }
+
+export default Dashboard;

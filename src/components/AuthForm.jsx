@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import {
+  Box,
   TextField,
   Button,
-  Paper,
   Typography,
-  Box,
-  Link,
+  Paper,
 } from "@mui/material";
 
-export default function AuthForm({ onLogin }) {
+function AuthForm({ onLogin }) {
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,96 +15,68 @@ export default function AuthForm({ onLogin }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (isSignup) {
       if (password !== confirmPassword) {
-        alert("❌ Passwords do not match!");
+        alert("Passwords do not match!");
         return;
       }
       localStorage.setItem("user", JSON.stringify({ email, password }));
-      alert("✅ Signup successful! Please log in.");
+      alert("Signup successful! Please log in.");
       setIsSignup(false);
     } else {
       const storedUser = JSON.parse(localStorage.getItem("user"));
-      if (
-        storedUser &&
-        storedUser.email === email &&
-        storedUser.password === password
-      ) {
+      if (storedUser && storedUser.email === email && storedUser.password === password) {
         onLogin(email);
       } else {
-        alert("❌ Invalid email or password.");
+        alert("Invalid email or password.");
       }
     }
   };
 
   return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      minHeight="100vh"
-      sx={{ backgroundColor: "#f5f5f5" }}
-    >
-      <Paper elevation={4} sx={{ p: 4, width: "100%", maxWidth: 400 }}>
-        <Typography variant="h5" align="center" gutterBottom>
-          {isSignup ? "Create Account" : "Login"}
-        </Typography>
-
-        <form onSubmit={handleSubmit}>
+    <Paper sx={{ p: 3, maxWidth: 400, mx: "auto" }}>
+      <Typography variant="h5" align="center" gutterBottom>
+        {isSignup ? "Sign Up" : "Login"}
+      </Typography>
+      <Box component="form" onSubmit={handleSubmit}>
+        <TextField
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          fullWidth
+          sx={{ mb: 2 }}
+        />
+        <TextField
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          fullWidth
+          sx={{ mb: 2 }}
+        />
+        {isSignup && (
           <TextField
-            label="Email"
-            type="email"
-            fullWidth
-            margin="normal"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-
-          <TextField
-            label="Password"
+            label="Confirm Password"
             type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             fullWidth
-            margin="normal"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            sx={{ mb: 2 }}
           />
-
-          {isSignup && (
-            <TextField
-              label="Confirm Password"
-              type="password"
-              fullWidth
-              margin="normal"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          )}
-
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            sx={{ mt: 2, mb: 1 }}
-          >
-            {isSignup ? "Sign Up" : "Login"}
-          </Button>
-        </form>
-
-        <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-          {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
-          <Link
-            component="button"
-            onClick={() => setIsSignup(!isSignup)}
-            underline="hover"
-          >
-            {isSignup ? "Login" : "Sign Up"}
-          </Link>
-        </Typography>
-      </Paper>
-    </Box>
+        )}
+        <Button type="submit" variant="contained" fullWidth sx={{ mb: 2 }}>
+          {isSignup ? "Sign Up" : "Login"}
+        </Button>
+      </Box>
+      <Typography align="center">
+        {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
+        <Button variant="text" onClick={() => setIsSignup(!isSignup)}>
+          {isSignup ? "Login" : "Sign Up"}
+        </Button>
+      </Typography>
+    </Paper>
   );
 }
+
+export default AuthForm;

@@ -1,7 +1,8 @@
+
 import React, { useState } from "react";
 import { Box, TextField, Button, Typography, Paper } from "@mui/material";
 
-export default function SignUpForm({ onSignUp }) {
+function SignUpForm({ onSignUp }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -62,3 +63,5 @@ export default function SignUpForm({ onSignUp }) {
     </Paper>
   );
 }
+
+export default SignUpForm;
