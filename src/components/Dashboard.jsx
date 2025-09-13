@@ -11,7 +11,6 @@ import SalaryForm from "./SalaryForm";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
-import BarChartExpenses from "./BarChartExpenses";
 
 function Dashboard({
   currentUser,
@@ -26,18 +25,23 @@ function Dashboard({
   resetAll,
   logout,
 }) {
-  // ✅ Moved here (not inside JSX)
-  const downloadCSV = async () => {
+  // 📥 File download helper
+  const handleDownload = async (format) => {
     const token = localStorage.getItem("token");
-    const response = await fetch("http://127.0.0.1:5000/budget/download-expenses-csv", {
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await fetch(`http://127.0.0.1:5000/budget/download-expenses-${format}`, {
+      headers: { Authorization: `Bearer ${token}` }
     });
+
+    if (!response.ok) {
+      alert(`Failed to download ${format.toUpperCase()}`);
+      return;
+    }
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "expenses.csv";
+    a.download = `expenses.${format}`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -83,21 +87,43 @@ function Dashboard({
         <Grid item xs={12} md={8}>
           <ExpenseForm onSubmit={addExpense} />
           <Divider sx={{ my: 2 }} />
-          <ExpenseList
-            expenses={expenses}
-            onUpdate={updateExpense}
-            onDelete={deleteExpense}
-          />
+          <ExpenseList expenses={expenses} onUpdate={updateExpense} onDelete={deleteExpense} />
         </Grid>
       </Grid>
 
+      {/* 📊 Report Downloads */}
+      <Box sx={{ textAlign: "center", mt: 3 }}>
+        <Typography variant="h6" gutterBottom>📂 Download Reports</Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ m: 1 }}
+          onClick={() => handleDownload("csv")}
+        >
+          📄 CSV
+        </Button>
+        <Button
+          variant="contained"
+          color="success"
+          sx={{ m: 1 }}
+          onClick={() => handleDownload("excel")}
+        >
+          📊 Excel
+        </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          sx={{ m: 1 }}
+          onClick={() => handleDownload("pdf")}
+        >
+          📕 PDF
+        </Button>
+      </Box>
+
       {/* Footer */}
       <Box sx={{ textAlign: "center", mt: 3 }}>
-        <Button variant="outlined" color="warning" onClick={resetAll} sx={{ mr: 2 }}>
+        <Button variant="outlined" color="warning" onClick={resetAll}>
           🗑️ Clear All Data
-        </Button>
-        <Button variant="contained" color="primary" onClick={downloadCSV}>
-          📥 Download CSV
         </Button>
       </Box>
     </Box>
