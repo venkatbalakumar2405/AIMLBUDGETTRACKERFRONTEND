@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -11,6 +11,7 @@ import SalaryForm from "./SalaryForm";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
+import ExpenseTrends from "./ExpenseTrends"; // ✅ Import Trends Component
 
 function Dashboard({
   currentUser,
@@ -28,9 +29,10 @@ function Dashboard({
   // 📥 File download helper
   const handleDownload = async (format) => {
     const token = localStorage.getItem("token");
-    const response = await fetch(`http://127.0.0.1:5000/budget/download-expenses-${format}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await fetch(
+      `http://127.0.0.1:5000/budget/download-expenses-${format}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
     if (!response.ok) {
       alert(`Failed to download ${format.toUpperCase()}`);
@@ -78,7 +80,9 @@ function Dashboard({
           <Box sx={{ mt: 2 }}>
             <Balance
               salary={formatCurrency(salary)}
-              expenses={formatCurrency(expenses.reduce((a, e) => a + e.amount, 0))}
+              expenses={formatCurrency(
+                expenses.reduce((a, e) => a + e.amount, 0)
+              )}
               balance={formatCurrency(balance)}
             />
           </Box>
@@ -87,13 +91,24 @@ function Dashboard({
         <Grid item xs={12} md={8}>
           <ExpenseForm onSubmit={addExpense} />
           <Divider sx={{ my: 2 }} />
-          <ExpenseList expenses={expenses} onUpdate={updateExpense} onDelete={deleteExpense} />
+          <ExpenseList
+            expenses={expenses}
+            onUpdate={updateExpense}
+            onDelete={deleteExpense}
+          />
         </Grid>
       </Grid>
 
-      {/* 📊 Report Downloads */}
+      {/* 📊 Monthly Expenses Chart (toggleable) */}
+      <Grid item xs={12} sx={{ mt: 4 }}>
+        <ExpenseTrends /> {/* ✅ Cleanly separated */}
+      </Grid>
+
+      {/* 📂 Report Downloads */}
       <Box sx={{ textAlign: "center", mt: 3 }}>
-        <Typography variant="h6" gutterBottom>📂 Download Reports</Typography>
+        <Typography variant="h6" gutterBottom>
+          📂 Download Reports
+        </Typography>
         <Button
           variant="contained"
           color="primary"

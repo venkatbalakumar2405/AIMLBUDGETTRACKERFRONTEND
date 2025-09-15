@@ -1,9 +1,17 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ThemeProvider, createTheme, CssBaseline, IconButton } from "@mui/material";
+import {
+  ThemeProvider,
+  createTheme,
+  CssBaseline,
+  IconButton,
+} from "@mui/material";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import Dashboard from "./components/Dashboard";
 import AuthForm from "./components/AuthForm";
+
+// Flask backend URL
+const API_URL = "http://127.0.0.1:5000";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -25,36 +33,116 @@ export default function App() {
     [darkMode]
   );
 
-  // ✅ Load from storage
+  // ✅ Load theme + session from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode") === "true";
     setDarkMode(savedTheme);
 
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
     const user = localStorage.getItem("currentUser");
-    const users = JSON.parse(localStorage.getItem("users")) || {};
 
-    if (loggedIn && user && users[user]) {
+    if (loggedIn && user) {
       setIsLoggedIn(true);
       setCurrentUser(user);
-      setSalary(users[user].salary || 0);
-      setExpenses(users[user].expenses || []);
+      fetchUserData(user);
     }
   }, []);
 
-  // ✅ Save user data
-  useEffect(() => {
-    if (currentUser) {
-      const users = JSON.parse(localStorage.getItem("users")) || {};
-      users[currentUser] = { ...users[currentUser], salary, expenses };
-      localStorage.setItem("users", JSON.stringify(users));
+  // ✅ Fetch user + expenses
+  const fetchUserData = async (email) => {
+    try {
+      const res = await fetch(`${API_URL}/auth/user/${email}`);
+      if (!res.ok) throw new Error("Failed to fetch user");
+      const data = await res.json();
+      setSalary(data.salary || 0);
+      setExpenses(data.expenses || []);
+    } catch (err) {
+      console.error("Error loading user:", err);
     }
-  }, [salary, expenses, currentUser]);
+  };
 
-  // ✅ Save theme choice
-  useEffect(() => {
-    localStorage.setItem("darkMode", darkMode);
-  }, [darkMode]);
+  // ✅ Salary update → backend
+  const handleSalary = async (amount) => {
+    const newSalary = Number(amount);
+    setSalary(newSalary);
+    try {
+      await fetch(`${API_URL}/budget/salary`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser, salary: newSalary }),
+      });
+    } catch (err) {
+      console.error("Error updating salary:", err);
+    }
+  };
+
+  // ✅ Add expense → backend
+  const addExpense = async (expense) => {
+    try {
+      const res = await fetch(`${API_URL}/budget/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...expense, email: currentUser }),
+      });
+      if (res.ok) fetchUserData(currentUser);
+    } catch (err) {
+      console.error("Error adding expense:", err);
+    }
+  };
+
+  // ✅ Update expense → backend
+  const updateExpense = async (id, updated) => {
+    try {
+      const res = await fetch(`${API_URL}/budget/update/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      if (res.ok) fetchUserData(currentUser);
+    } catch (err) {
+      console.error("Error updating expense:", err);
+    }
+  };
+
+  // ✅ Delete expense → backend
+  const deleteExpense = async (id) => {
+    try {
+      const res = await fetch(`${API_URL}/budget/delete/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) fetchUserData(currentUser);
+    } catch (err) {
+      console.error("Error deleting expense:", err);
+    }
+  };
+
+  // ✅ Reset all → backend
+  const resetAll = async () => {
+    if (window.confirm("Clear all data?")) {
+      try {
+        await fetch(`${API_URL}/budget/reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: currentUser }),
+        });
+        setSalary(0);
+        setExpenses([]);
+      } catch (err) {
+        console.error("Error resetting data:", err);
+      }
+    }
+  };
+
+  // ✅ Logout
+  const logout = () => {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    localStorage.setItem("isLoggedIn", false);
+    localStorage.removeItem("currentUser");
+  };
+
+  // ✅ Balance
+  const balance = salary - expenses.reduce((a, e) => a + e.amount, 0);
 
   // ✅ Currency formatter
   const formatCurrency = (value) =>
@@ -63,27 +151,6 @@ export default function App() {
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(value);
-
-  // Handlers
-  const handleSalary = (amount) => setSalary(Number(amount));
-  const addExpense = (expense) => setExpenses([...expenses, { ...expense, id: Date.now() }]);
-  const updateExpense = (id, updated) =>
-    setExpenses(expenses.map((e) => (e.id === id ? { ...e, ...updated } : e)));
-  const deleteExpense = (id) => setExpenses(expenses.filter((e) => e.id !== id));
-  const resetAll = () => {
-    if (window.confirm("Clear all data?")) {
-      setSalary(0);
-      setExpenses([]);
-    }
-  };
-  const logout = () => {
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    localStorage.setItem("isLoggedIn", false);
-    localStorage.removeItem("currentUser");
-  };
-
-  const balance = salary - expenses.reduce((a, e) => a + e.amount, 0);
 
   return (
     <ThemeProvider theme={theme}>
@@ -101,6 +168,7 @@ export default function App() {
             setCurrentUser(email);
             localStorage.setItem("isLoggedIn", true);
             localStorage.setItem("currentUser", email);
+            fetchUserData(email);
           }}
         />
       ) : (
