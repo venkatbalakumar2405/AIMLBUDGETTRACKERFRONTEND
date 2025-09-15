@@ -7,119 +7,112 @@ import {
   Grid,
   Divider,
 } from "@mui/material";
+
 import SalaryForm from "./SalaryForm";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
 import ExpenseTrends from "./ExpenseTrends";
 
+// ✅ Import API helpers
+import {
+  getExpenses,
+  updateSalary,
+  addExpense as apiAddExpense,
+  deleteExpense as apiDeleteExpense,
+  resetAll as apiResetAll,
+  downloadReport,
+} from "../api";
+
 function Dashboard({ currentUser, logout, formatCurrency }) {
   const [salary, setSalary] = useState(0);
   const [expenses, setExpenses] = useState([]);
   const [balance, setBalance] = useState(0);
 
-  const email = localStorage.getItem("email");
-
-  // 🔄 Fetch user profile (salary + expenses)
+  // 🔄 Fetch profile data (salary + expenses)
   const fetchProfile = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:5000/auth/user/${email}`);
-      const data = await res.json();
-      if (res.ok) {
-        setSalary(data.salary);
-        setExpenses(data.expenses);
-        setBalance(data.salary - data.expenses.reduce((a, e) => a + e.amount, 0));
-      } else {
-        alert(data.error || "Failed to fetch profile");
-      }
+      const res = await getExpenses(currentUser);
+      const salaryFromDB = res.salary || 0;
+      const expensesFromDB = res.data || [];
+
+      setSalary(salaryFromDB);
+      setExpenses(expensesFromDB);
+      setBalance(
+        salaryFromDB - expensesFromDB.reduce((a, e) => a + e.amount, 0)
+      );
     } catch (err) {
       console.error(err);
-      alert("Server error while fetching profile");
+      alert("Failed to fetch profile");
     }
   };
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (currentUser) {
+      fetchProfile();
+    }
+  }, [currentUser]);
 
   // 💵 Update salary
   const handleSalary = async (amount) => {
-    const res = await fetch("http://127.0.0.1:5000/budget/salary", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, salary: amount }),
-    });
-    const data = await res.json();
-    if (res.ok) {
+    try {
+      await updateSalary(currentUser, amount);
       setSalary(amount);
       setBalance(amount - expenses.reduce((a, e) => a + e.amount, 0));
-    } else {
-      alert(data.error || "Failed to update salary");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update salary");
     }
   };
 
   // ➕ Add expense
   const addExpense = async (expense) => {
-    const res = await fetch("http://127.0.0.1:5000/budget/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...expense, email }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      fetchProfile(); // refresh after adding
-    } else {
-      alert(data.error || "Failed to add expense");
+    try {
+      await apiAddExpense(currentUser, expense.amount, expense.description);
+      fetchProfile();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add expense");
     }
   };
 
   // ❌ Delete expense
   const deleteExpense = async (id) => {
-    const res = await fetch(`http://127.0.0.1:5000/budget/delete/${id}`, {
-      method: "DELETE",
-    });
-    const data = await res.json();
-    if (res.ok) {
+    try {
+      await apiDeleteExpense(id);
       fetchProfile();
-    } else {
-      alert(data.error || "Failed to delete expense");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete expense");
     }
   };
 
-  // 🗑️ Reset all (salary + expenses)
+  // 🗑️ Reset all
   const resetAll = async () => {
-    const res = await fetch("http://127.0.0.1:5000/budget/reset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json();
-    if (res.ok) {
+    try {
+      await apiResetAll(currentUser);
       fetchProfile();
-    } else {
-      alert(data.error || "Failed to reset");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reset data");
     }
   };
 
   // 📥 File downloads
   const handleDownload = async (format) => {
-    const res = await fetch(
-      `http://127.0.0.1:5000/budget/download-expenses-${format}?email=${email}`
-    );
-
-    if (!res.ok) {
+    try {
+      const blob = await downloadReport(format, currentUser);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `expenses.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error(err);
       alert(`Failed to download ${format.toUpperCase()}`);
-      return;
     }
-
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `expenses.${format}`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
   };
 
   return (
@@ -153,9 +146,7 @@ function Dashboard({ currentUser, logout, formatCurrency }) {
           <Box sx={{ mt: 2 }}>
             <Balance
               salary={formatCurrency(salary)}
-              expenses={formatCurrency(
-                expenses.reduce((a, e) => a + e.amount, 0)
-              )}
+              expenses={formatCurrency(expenses.reduce((a, e) => a + e.amount, 0))}
               balance={formatCurrency(balance)}
             />
           </Box>
@@ -168,12 +159,12 @@ function Dashboard({ currentUser, logout, formatCurrency }) {
         </Grid>
       </Grid>
 
-      {/* 📊 Monthly Expenses Chart */}
+      {/* 📊 Trends */}
       <Grid item xs={12} sx={{ mt: 4 }}>
         <ExpenseTrends />
       </Grid>
 
-      {/* 📂 Report Downloads */}
+      {/* 📂 Downloads */}
       <Box sx={{ textAlign: "center", mt: 3 }}>
         <Typography variant="h6" gutterBottom>
           📂 Download Reports

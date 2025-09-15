@@ -7,12 +7,20 @@ import {
 } from "@mui/material";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
+
 import Dashboard from "./components/Dashboard";
 import AuthForm from "./components/AuthForm";
 import Register from "./components/Register";
 
-// Flask backend URL
-const API_URL = "http://127.0.0.1:5000";
+// ✅ Import API helpers
+import {
+  updateSalary as apiUpdateSalary,
+  addExpense as apiAddExpense,
+  getExpenses as apiGetExpenses,
+  updateExpense as apiUpdateExpense,
+  deleteExpense as apiDeleteExpense,
+  resetAll as apiResetAll,
+} from "./api";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -34,7 +42,7 @@ export default function App() {
     [darkMode]
   );
 
-  // ✅ Load theme + session from localStorage
+  // ✅ Load session + theme from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode") === "true";
     setDarkMode(savedTheme);
@@ -49,83 +57,64 @@ export default function App() {
     }
   }, []);
 
-  // ✅ Fetch user + expenses
+  // ✅ Fetch salary + expenses from backend
   const fetchUserData = async (email) => {
     try {
-      const res = await fetch(`${API_URL}/auth/user/${email}`);
-      if (!res.ok) throw new Error("Failed to fetch user");
-      const data = await res.json();
-      setSalary(data.salary || 0);
-      setExpenses(data.expenses || []);
+      const res = await apiGetExpenses(email);
+      setExpenses(res.data || []);
     } catch (err) {
-      console.error("Error loading user:", err);
+      console.error("Error fetching expenses:", err);
     }
   };
 
-  // ✅ Salary update → backend
+  // ✅ Salary update
   const handleSalary = async (amount) => {
     const newSalary = Number(amount);
     setSalary(newSalary);
     try {
-      await fetch(`${API_URL}/budget/salary`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: currentUser, salary: newSalary }),
-      });
+      await apiUpdateSalary(currentUser, newSalary);
     } catch (err) {
       console.error("Error updating salary:", err);
+      alert("Failed to update salary");
     }
   };
 
-  // ✅ Add expense → backend
+  // ✅ Add expense
   const addExpense = async (expense) => {
     try {
-      const res = await fetch(`${API_URL}/budget/add`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...expense, email: currentUser }),
-      });
-      if (res.ok) fetchUserData(currentUser);
+      await apiAddExpense(currentUser, expense.amount, expense.description);
+      fetchUserData(currentUser);
     } catch (err) {
       console.error("Error adding expense:", err);
+      alert("Failed to add expense");
     }
   };
 
-  // ✅ Update expense → backend
+  // ✅ Update expense
   const updateExpense = async (id, updated) => {
     try {
-      const res = await fetch(`${API_URL}/budget/update/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
-      });
-      if (res.ok) fetchUserData(currentUser);
+      await apiUpdateExpense(id, updated.amount, updated.description);
+      fetchUserData(currentUser);
     } catch (err) {
       console.error("Error updating expense:", err);
     }
   };
 
-  // ✅ Delete expense → backend
+  // ✅ Delete expense
   const deleteExpense = async (id) => {
     try {
-      const res = await fetch(`${API_URL}/budget/delete/${id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) fetchUserData(currentUser);
+      await apiDeleteExpense(id);
+      fetchUserData(currentUser);
     } catch (err) {
       console.error("Error deleting expense:", err);
     }
   };
 
-  // ✅ Reset all → backend
+  // ✅ Reset all data
   const resetAll = async () => {
     if (window.confirm("Clear all data?")) {
       try {
-        await fetch(`${API_URL}/budget/reset`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: currentUser }),
-        });
+        await apiResetAll(currentUser);
         setSalary(0);
         setExpenses([]);
       } catch (err) {
