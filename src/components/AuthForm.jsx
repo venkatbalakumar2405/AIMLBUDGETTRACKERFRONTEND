@@ -5,6 +5,7 @@ import {
   Button,
   Typography,
   Paper,
+  Alert,
 } from "@mui/material";
 
 function AuthForm({ onLogin }) {
@@ -12,13 +13,18 @@ function AuthForm({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage({ type: "", text: "" });
 
     if (isSignup) {
       if (password !== confirmPassword) {
-        alert("Passwords do not match!");
+        setMessage({ type: "error", text: "Passwords do not match!" });
+        setLoading(false);
         return;
       }
 
@@ -31,14 +37,14 @@ function AuthForm({ onLogin }) {
 
         const data = await res.json();
         if (res.ok) {
-          alert("Signup successful! Please log in.");
+          setMessage({ type: "success", text: "Signup successful! Please log in." });
           setIsSignup(false);
         } else {
-          alert(data.error || "Signup failed");
+          setMessage({ type: "error", text: data.error || "Signup failed" });
         }
       } catch (err) {
         console.error(err);
-        alert("Error connecting to server.");
+        setMessage({ type: "error", text: "Error connecting to server." });
       }
     } else {
       try {
@@ -50,17 +56,22 @@ function AuthForm({ onLogin }) {
 
         const data = await res.json();
         if (res.ok) {
-          localStorage.setItem("token", data.token || ""); // store token if returned
-          localStorage.setItem("email", email);
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+          }
+          localStorage.setItem("currentUser", email);
           onLogin(email);
+          setMessage({ type: "success", text: "Login successful!" });
         } else {
-          alert(data.error || "Invalid email or password");
+          setMessage({ type: "error", text: data.error || "Invalid email or password" });
         }
       } catch (err) {
         console.error(err);
-        alert("Error connecting to server.");
+        setMessage({ type: "error", text: "Error connecting to server." });
       }
     }
+
+    setLoading(false);
   };
 
   return (
@@ -68,6 +79,13 @@ function AuthForm({ onLogin }) {
       <Typography variant="h5" align="center" gutterBottom>
         {isSignup ? "Sign Up" : "Login"}
       </Typography>
+
+      {message.text && (
+        <Alert severity={message.type} sx={{ mb: 2 }}>
+          {message.text}
+        </Alert>
+      )}
+
       <Box component="form" onSubmit={handleSubmit}>
         <TextField
           label="Email"
@@ -98,10 +116,17 @@ function AuthForm({ onLogin }) {
             sx={{ mb: 2 }}
           />
         )}
-        <Button type="submit" variant="contained" fullWidth sx={{ mb: 2 }}>
-          {isSignup ? "Sign Up" : "Login"}
+        <Button
+          type="submit"
+          variant="contained"
+          fullWidth
+          disabled={loading}
+          sx={{ mb: 2 }}
+        >
+          {loading ? "Processing..." : isSignup ? "Sign Up" : "Login"}
         </Button>
       </Box>
+
       <Typography align="center">
         {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
         <Button variant="text" onClick={() => setIsSignup(!isSignup)}>

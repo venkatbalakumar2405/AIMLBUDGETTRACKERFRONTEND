@@ -15,33 +15,41 @@ function BarChartExpenses() {
   useEffect(() => {
     const fetchMonthlyExpenses = async () => {
       const token = localStorage.getItem("token");
-      const email = localStorage.getItem("currentUser"); // 👈 stored at login
+      const email = localStorage.getItem("currentUser");
 
-      const response = await fetch(
-        `http://127.0.0.1:5000/budget/monthly-expenses?email=${email}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!response.ok) {
-        console.error("Failed to fetch expenses");
+      if (!token || !email) {
+        console.warn("No token or email found in localStorage");
         return;
       }
 
-      const result = await response.json();
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:5000/budget/monthly-expenses?email=${email}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-      // Format labels like "Jan 2025"
-      const months = [
-        "Jan","Feb","Mar","Apr","May","Jun",
-        "Jul","Aug","Sep","Oct","Nov","Dec"
-      ];
-      const formatted = result.map((item) => ({
-        name: `${months[item.month - 1]} ${item.year}`,
-        total: item.total,
-      }));
+        if (!response.ok) {
+          throw new Error("Failed to fetch expenses");
+        }
 
-      setData(formatted);
+        const result = await response.json();
+
+        const months = [
+          "Jan","Feb","Mar","Apr","May","Jun",
+          "Jul","Aug","Sep","Oct","Nov","Dec"
+        ];
+
+        const formatted = result.map((item) => ({
+          name: `${months[item.month - 1]} ${item.year}`,
+          total: item.total,
+        }));
+
+        setData(formatted);
+      } catch (err) {
+        console.error(err);
+      }
     };
 
     fetchMonthlyExpenses();

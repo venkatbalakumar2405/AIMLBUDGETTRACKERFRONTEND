@@ -1,25 +1,12 @@
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Paper,
-  Grid,
-  Divider,
-} from "@mui/material";
+import { Box, Typography, Button, Paper, Grid, Divider } from "@mui/material";
 import SalaryForm from "./SalaryForm";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
 import ExpenseTrends from "./ExpenseTrends";
-import {
-  getProfile,
-  updateSalary,
-  addExpense,
-  deleteExpense,
-  resetAll,
-  downloadReport,
-} from "../api";
+
+import { getProfile, updateSalary, addExpense, deleteExpense, resetAll, downloadReport } from "../api";  // ✅ FIXED
 
 function Dashboard({ currentUser, logout, formatCurrency }) {
   const [salary, setSalary] = useState(0);
@@ -28,18 +15,15 @@ function Dashboard({ currentUser, logout, formatCurrency }) {
 
   const email = localStorage.getItem("email");
 
-  // 🔄 Load salary + expenses
   const fetchProfile = async () => {
     try {
       const data = await getProfile(email);
       setSalary(data.salary);
       setExpenses(data.expenses);
-      setBalance(
-        data.salary - data.expenses.reduce((a, e) => a + e.amount, 0)
-      );
+      setBalance(data.salary - data.expenses.reduce((a, e) => a + e.amount, 0));
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      alert("Server error while fetching profile");
     }
   };
 
@@ -47,7 +31,6 @@ function Dashboard({ currentUser, logout, formatCurrency }) {
     fetchProfile();
   }, []);
 
-  // 💵 Update salary
   const handleSalary = async (amount) => {
     try {
       await updateSalary(email, amount);
@@ -58,7 +41,6 @@ function Dashboard({ currentUser, logout, formatCurrency }) {
     }
   };
 
-  // ➕ Add expense
   const handleAddExpense = async (expense) => {
     try {
       await addExpense(email, expense);
@@ -68,7 +50,6 @@ function Dashboard({ currentUser, logout, formatCurrency }) {
     }
   };
 
-  // ❌ Delete expense
   const handleDeleteExpense = async (id) => {
     try {
       await deleteExpense(id);
@@ -78,8 +59,7 @@ function Dashboard({ currentUser, logout, formatCurrency }) {
     }
   };
 
-  // 🗑️ Reset all
-  const handleResetAll = async () => {
+  const handleReset = async () => {
     try {
       await resetAll(email);
       fetchProfile();
@@ -88,24 +68,18 @@ function Dashboard({ currentUser, logout, formatCurrency }) {
     }
   };
 
-  // 📂 Download file
-  const handleDownload = (format) => {
-    downloadReport(email, format);
+  const handleDownload = async (format) => {
+    try {
+      await downloadReport(email, format);
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Paper
-        elevation={3}
-        sx={{
-          p: 2,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
+      <Paper elevation={3} sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h5">💰 Budget Tracker</Typography>
         <Box>
           <Typography variant="subtitle1" sx={{ display: "inline", mr: 2 }}>
@@ -120,61 +94,39 @@ function Dashboard({ currentUser, logout, formatCurrency }) {
       {/* Content */}
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
-          <SalaryForm salary={salary} onSubmit={handleSalary} />
+          <SalaryForm email={email} salary={salary} onSalaryUpdate={handleSalary} />
           <Box sx={{ mt: 2 }}>
             <Balance
               salary={formatCurrency(salary)}
-              expenses={formatCurrency(
-                expenses.reduce((a, e) => a + e.amount, 0)
-              )}
+              expenses={formatCurrency(expenses.reduce((a, e) => a + e.amount, 0))}
               balance={formatCurrency(balance)}
             />
           </Box>
         </Grid>
 
         <Grid item xs={12} md={8}>
-          <ExpenseForm onSubmit={handleAddExpense} />
+          <ExpenseForm email={email} onExpenseAdd={handleAddExpense} />
           <Divider sx={{ my: 2 }} />
           <ExpenseList expenses={expenses} onDelete={handleDeleteExpense} />
         </Grid>
       </Grid>
 
-      {/* 📊 Monthly chart */}
+      {/* Expense Trends */}
       <Grid item xs={12} sx={{ mt: 4 }}>
-        <ExpenseTrends />
+        <ExpenseTrends email={email} />
       </Grid>
 
-      {/* 📂 Downloads */}
+      {/* Downloads */}
       <Box sx={{ textAlign: "center", mt: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          📂 Download Reports
-        </Typography>
-        <Button
-          variant="contained"
-          sx={{ m: 1 }}
-          onClick={() => handleDownload("csv")}
-        >
-          📄 CSV
-        </Button>
-        <Button
-          variant="contained"
-          sx={{ m: 1 }}
-          onClick={() => handleDownload("excel")}
-        >
-          📊 Excel
-        </Button>
-        <Button
-          variant="contained"
-          sx={{ m: 1 }}
-          onClick={() => handleDownload("pdf")}
-        >
-          📕 PDF
-        </Button>
+        <Typography variant="h6" gutterBottom>📂 Download Reports</Typography>
+        <Button variant="contained" sx={{ m: 1 }} onClick={() => handleDownload("csv")}>📄 CSV</Button>
+        <Button variant="contained" color="success" sx={{ m: 1 }} onClick={() => handleDownload("excel")}>📊 Excel</Button>
+        <Button variant="contained" color="secondary" sx={{ m: 1 }} onClick={() => handleDownload("pdf")}>📕 PDF</Button>
       </Box>
 
       {/* Footer */}
       <Box sx={{ textAlign: "center", mt: 3 }}>
-        <Button variant="outlined" color="warning" onClick={handleResetAll}>
+        <Button variant="outlined" color="warning" onClick={handleReset}>
           🗑️ Clear All Data
         </Button>
       </Box>

@@ -15,7 +15,7 @@ function Balance({ salary, expenses, balance }) {
 
         <Divider sx={{ my: 1 }} />
 
-        <Typography variant="h6" color="success.main">
+        <Typography variant="h6" color="success">
           💵 Balance: {balance}
         </Typography>
       </CardContent>

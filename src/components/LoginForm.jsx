@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { TextField, Button, Typography, Paper } from "@mui/material";
-import API from "../api"; // axios instance (baseURL = http://127.0.0.1:5000)
+import { loginUser } from "../api";  // ✅ use named import
 
 function LoginForm({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -10,17 +10,15 @@ function LoginForm({ onLogin }) {
     e.preventDefault();
 
     try {
-      const res = await API.post("/auth/login", { email, password });
-
-      // Save user session in localStorage
+      const res = await loginUser(email, password);  // ✅ use helper
       localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("currentUser", res.data.email);
+      localStorage.setItem("currentUser", res.email);
 
-      alert(res.data.message);
+      alert(res.message || "Login successful!");
       onLogin(true);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Login failed");
+      alert(err.message || "Login failed");
     }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Box, TextField, Button } from "@mui/material";
-import API from "../api"; // axios instance
+import { updateSalary } from "../api";  // ✅ FIXED
 
 function SalaryForm({ email, salary, onSalaryUpdate }) {
   const [amount, setAmount] = useState(salary);
@@ -8,15 +8,12 @@ function SalaryForm({ email, salary, onSalaryUpdate }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await API.put(`/auth/user/${email}/salary`, {
-        salary: Number(amount),
-      });
-
-      alert(res.data.message || "Salary updated!");
-      onSalaryUpdate(Number(amount)); // update parent state
+      await updateSalary(email, Number(amount));
+      alert("Salary updated!");
+      onSalaryUpdate(Number(amount));
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Failed to update salary");
+      alert(err.message || "Failed to update salary");
     }
   };
 

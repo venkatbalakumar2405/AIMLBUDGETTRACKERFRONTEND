@@ -1,15 +1,15 @@
 const API_URL = "http://127.0.0.1:5000";
 
-// ✅ Get user salary + expenses
-export const getProfile = async (email) => {
-  const res = await fetch(`${API_URL}/budget/all/${email}`);
+/** ✅ Get user profile (salary + expenses) */
+export async function getProfile(email) {
+  const res = await fetch(`${API_URL}/auth/user/${email}`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to fetch profile");
   return data; // { salary, expenses: [...] }
-};
+}
 
-// ✅ Update salary
-export const updateSalary = async (email, salary) => {
+/** ✅ Update salary */
+export async function updateSalary(email, salary) {
   const res = await fetch(`${API_URL}/budget/salary`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -18,10 +18,10 @@ export const updateSalary = async (email, salary) => {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to update salary");
   return data;
-};
+}
 
-// ✅ Add expense
-export const addExpense = async (email, expense) => {
+/** ✅ Add expense */
+export async function addExpense(email, expense) {
   const res = await fetch(`${API_URL}/budget/add`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,20 +30,20 @@ export const addExpense = async (email, expense) => {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to add expense");
   return data;
-};
+}
 
-// ✅ Delete expense
-export const deleteExpense = async (id) => {
+/** ✅ Delete expense */
+export async function deleteExpense(id) {
   const res = await fetch(`${API_URL}/budget/delete/${id}`, {
     method: "DELETE",
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to delete expense");
   return data;
-};
+}
 
-// ✅ Reset salary + expenses
-export const resetAll = async (email) => {
+/** ✅ Reset all (salary + expenses) */
+export async function resetAll(email) {
   const res = await fetch(`${API_URL}/budget/reset`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -52,10 +52,10 @@ export const resetAll = async (email) => {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to reset");
   return data;
-};
+}
 
-// ✅ Download reports
-export const downloadReport = async (email, format) => {
+/** ✅ Download reports */
+export async function downloadReport(email, format) {
   const res = await fetch(
     `${API_URL}/budget/download-expenses-${format}?email=${email}`
   );
@@ -69,4 +69,4 @@ export const downloadReport = async (email, format) => {
   document.body.appendChild(a);
   a.click();
   a.remove();
-};
+}

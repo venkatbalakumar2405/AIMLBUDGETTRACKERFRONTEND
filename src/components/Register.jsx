@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import API from "../api";
+import { registerUser } from "../api";  // ✅ named import
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -7,21 +7,29 @@ export default function Register() {
 
   const handleRegister = async () => {
     try {
-      const res = await API.post("/auth/register", { email, password });
-      alert(res.data.message);
+      const res = await registerUser(email, password);  // ✅ use our helper
+      alert(res.message || "User registered successfully!");
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Registration failed");
+      alert(err.message || "Registration failed");
     }
   };
 
   return (
     <div>
       <h2>Register</h2>
-      <input type="email" placeholder="Email"
-        value={email} onChange={(e) => setEmail(e.target.value)} />
-      <input type="password" placeholder="Password"
-        value={password} onChange={(e) => setPassword(e.target.value)} />
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
       <button onClick={handleRegister}>Register</button>
     </div>
   );
