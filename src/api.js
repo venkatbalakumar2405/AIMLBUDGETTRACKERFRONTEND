@@ -1,94 +1,72 @@
-const API_URL = "http://127.0.0.1:5000"; // Flask backend
+const API_URL = "http://127.0.0.1:5000";
 
-// 🔑 AUTH API
-export async function login(email, password) {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  if (!res.ok) throw new Error("Login failed");
-  return res.json();
-}
+// ✅ Get user salary + expenses
+export const getProfile = async (email) => {
+  const res = await fetch(`${API_URL}/budget/all/${email}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch profile");
+  return data; // { salary, expenses: [...] }
+};
 
-export async function register(name, email, password) {
-  const res = await fetch(`${API_URL}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password }),
-  });
-  if (!res.ok) throw new Error("Registration failed");
-  return res.json();
-}
-
-export async function getUser(email) {
-  const res = await fetch(`${API_URL}/auth/user/${email}`);
-  if (!res.ok) throw new Error("Failed to fetch user");
-  return res.json();
-}
-
-// 💵 SALARY
-export async function updateSalary(email, salary) {
+// ✅ Update salary
+export const updateSalary = async (email, salary) => {
   const res = await fetch(`${API_URL}/budget/salary`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, salary }),
   });
-  if (!res.ok) throw new Error("Failed to update salary");
-  return res.json();
-}
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to update salary");
+  return data;
+};
 
-// 💸 EXPENSES
-export async function addExpense(email, amount, description) {
+// ✅ Add expense
+export const addExpense = async (email, expense) => {
   const res = await fetch(`${API_URL}/budget/add`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, amount, description }),
+    body: JSON.stringify({ ...expense, email }),
   });
-  if (!res.ok) throw new Error("Failed to add expense");
-  return res.json();
-}
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to add expense");
+  return data;
+};
 
-export async function getExpenses(email) {
-  const res = await fetch(`${API_URL}/budget/all/${email}`);
-  if (!res.ok) throw new Error("Failed to fetch expenses");
-  return res.json();
-}
-
-export async function updateExpense(id, updatedData) {
-  const res = await fetch(`${API_URL}/budget/update/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updatedData),
-  });
-  if (!res.ok) throw new Error("Failed to update expense");
-  return res.json();
-}
-
-export async function deleteExpense(id) {
+// ✅ Delete expense
+export const deleteExpense = async (id) => {
   const res = await fetch(`${API_URL}/budget/delete/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error("Failed to delete expense");
-  return res.json();
-}
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to delete expense");
+  return data;
+};
 
-// 🗑️ RESET DATA
-export async function resetAll(email) {
+// ✅ Reset salary + expenses
+export const resetAll = async (email) => {
   const res = await fetch(`${API_URL}/budget/reset`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
-  if (!res.ok) throw new Error("Failed to reset data");
-  return res.json();
-}
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to reset");
+  return data;
+};
 
-// 📊 DOWNLOAD REPORTS
-export async function downloadReport(format, email) {
-  const res = await fetch(`${API_URL}/budget/download-expenses-${format}?email=${email}`);
-  if (!res.ok) throw new Error(`Failed to download ${format}`);
+// ✅ Download reports
+export const downloadReport = async (email, format) => {
+  const res = await fetch(
+    `${API_URL}/budget/download-expenses-${format}?email=${email}`
+  );
+  if (!res.ok) throw new Error(`Failed to download ${format.toUpperCase()}`);
 
-  // Return file blob
-  return res.blob();
-}
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `expenses.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+};
