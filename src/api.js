@@ -1,74 +1,91 @@
-
 const API_URL = "http://127.0.0.1:5000";
 
-// ✅ Register user
-export const registerUser = async (email, password) => {
+/** 🔹 Helper: handle fetch responses */
+async function handleResponse(res) {
+  const data = await res.json().catch(() => ({})); // fallback if no JSON
+  if (!res.ok) throw new Error(data.error || data.message || "Request failed");
+  return data;
+}
+
+/** 🔹 Register user */
+export async function registerUser(email, password) {
   const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
+  return handleResponse(res);
+}
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Registration failed");
-  return data; // { message: "...", token?: "..." }
-};
-
-/** ✅ Get user profile (salary + expenses) */
+/** 🔹 Get user profile (salary + expenses) */
 export async function getProfile(email) {
   const res = await fetch(`${API_URL}/auth/user/${email}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to fetch profile");
-  return data; // { salary, expenses: [...] }
+  return handleResponse(res); // { salary, expenses: [...] }
 }
 
-/** ✅ Update salary */
-export async function updateSalary(email, salary) {
-  const res = await fetch(`${API_URL}/budget/salary`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, salary }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to update salary");
-  return data;
+/** 🔹 Get only expenses */
+export async function getExpenses(email) {
+  const res = await fetch(`${API_URL}/budget/expenses?email=${email}`);
+  return handleResponse(res); // { expenses: [...] }
 }
 
-/** ✅ Add expense */
+/** 🔹 Add expense */
 export async function addExpense(email, expense) {
   const res = await fetch(`${API_URL}/budget/add`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...expense, email }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to add expense");
-  return data;
+  return handleResponse(res);
 }
 
-/** ✅ Delete expense */
+/** 🔹 Update expense */
+export async function updateExpense(id, updatedExpense) {
+  const res = await fetch(`${API_URL}/budget/update/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updatedExpense),
+  });
+  return handleResponse(res);
+}
+
+/** 🔹 Delete expense */
 export async function deleteExpense(id) {
   const res = await fetch(`${API_URL}/budget/delete/${id}`, {
     method: "DELETE",
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to delete expense");
-  return data;
+  return handleResponse(res);
 }
 
-/** ✅ Reset all (salary + expenses) */
+/** 🔹 Update salary */
+export async function updateSalary(email, salary) {
+  const res = await fetch(`${API_URL}/budget/salary`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, salary }),
+  });
+  return handleResponse(res);
+}
+
+/** 🔹 Reset all (salary + expenses) */
 export async function resetAll(email) {
   const res = await fetch(`${API_URL}/budget/reset`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to reset");
-  return data;
+  return handleResponse(res);
+}
+export async function loginUser(email, password) {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  return handleResponse(res); // { message, token }
 }
 
-/** ✅ Download reports */
+/** 🔹 Download expense reports (CSV, PDF, Excel, etc.) */
 export async function downloadReport(email, format) {
   const res = await fetch(
     `${API_URL}/budget/download-expenses-${format}?email=${email}`
@@ -79,7 +96,7 @@ export async function downloadReport(email, format) {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `expenses.${format}`;
+  a.download = `expenses_${new Date().toISOString().slice(0, 10)}.${format}`;
   document.body.appendChild(a);
   a.click();
   a.remove();

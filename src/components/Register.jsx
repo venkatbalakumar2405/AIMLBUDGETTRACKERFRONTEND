@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { registerUser } from "../api";  // ✅ named import
+import { registerUser } from "../api";  // ✅ import the named function
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -7,8 +7,8 @@ export default function Register() {
 
   const handleRegister = async () => {
     try {
-      const res = await registerUser(email, password);  // ✅ use our helper
-      alert(res.message || "User registered successfully!");
+      const res = await registerUser(email, password); // ✅ use your fetch wrapper
+      alert(res.message || "Registration successful!");
     } catch (err) {
       console.error(err);
       alert(err.message || "Registration failed");
