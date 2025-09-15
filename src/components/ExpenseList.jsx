@@ -21,8 +21,8 @@ function ExpenseList({ expenses, onDelete }) {
             }
           >
             <ListItemText
-              primary={expense.name}
-              secondary={`₹${expense.amount}`}
+              primary={expense.description}   // ✅ match backend field
+              secondary={`₹${expense.amount}`} // ✅ show amount
             />
           </ListItem>
           <Divider />
@@ -32,4 +32,4 @@ function ExpenseList({ expenses, onDelete }) {
   );
 }
 
-export default ExpenseList;  
+export default ExpenseList;

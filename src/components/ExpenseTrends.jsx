@@ -4,25 +4,33 @@ import {
   LineChart, Line,
   XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
 } from "recharts";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
+import API from "../api"; // axios instance
 
 function ExpenseTrends() {
   const [data, setData] = useState([]);
   const [chartType, setChartType] = useState("bar"); // bar | line
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://127.0.0.1:5000/budget/monthly-expenses", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      // Format: "2025-01", "2025-02"
-      const formatted = json.map((item) => ({
-        month: `${item.year}-${String(item.month).padStart(2, "0")}`,
-        total: item.total,
-      }));
-      setData(formatted);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await API.get("/budget/monthly-expenses", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const formatted = res.data.map((item) => ({
+          month: `${item.year}-${String(item.month).padStart(2, "0")}`,
+          total: item.total,
+        }));
+
+        setData(formatted);
+      } catch (err) {
+        console.error("Failed to load monthly expenses:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, []);
@@ -37,25 +45,36 @@ function ExpenseTrends() {
         Toggle to {chartType === "bar" ? "Line" : "Bar"} Chart
       </Button>
 
-      <ResponsiveContainer width="100%" height={300}>
-        {chartType === "bar" ? (
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="total" fill="#1976d2" />
-          </BarChart>
-        ) : (
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="total" stroke="#1976d2" strokeWidth={2} />
-          </LineChart>
-        )}
-      </ResponsiveContainer>
+      {loading ? (
+        <Typography>Loading chart...</Typography>
+      ) : data.length === 0 ? (
+        <Typography>No expense data yet.</Typography>
+      ) : (
+        <ResponsiveContainer width="100%" height={300}>
+          {chartType === "bar" ? (
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="total" fill="#1976d2" />
+            </BarChart>
+          ) : (
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="total"
+                stroke="#1976d2"
+                strokeWidth={2}
+              />
+            </LineChart>
+          )}
+        </ResponsiveContainer>
+      )}
     </Box>
   );
 }

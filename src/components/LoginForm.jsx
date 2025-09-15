@@ -1,20 +1,26 @@
 import React, { useState } from "react";
 import { TextField, Button, Typography, Paper } from "@mui/material";
+import API from "../api"; // axios instance (baseURL = http://127.0.0.1:5000)
 
 function LoginForm({ onLogin }) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const users = JSON.parse(localStorage.getItem("users")) || {};
 
-    if (users[username] && users[username].password === password) {
+    try {
+      const res = await API.post("/auth/login", { email, password });
+
+      // Save user session in localStorage
       localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("currentUser", username);
+      localStorage.setItem("currentUser", res.data.email);
+
+      alert(res.data.message);
       onLogin(true);
-    } else {
-      alert("Invalid username or password");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Login failed");
     }
   };
 
@@ -25,11 +31,12 @@ function LoginForm({ onLogin }) {
       </Typography>
       <form onSubmit={handleSubmit}>
         <TextField
-          label="Username"
+          label="Email"
+          type="email"
           fullWidth
           margin="normal"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
         />
         <TextField

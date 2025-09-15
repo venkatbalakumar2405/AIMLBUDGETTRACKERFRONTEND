@@ -13,22 +13,52 @@ function AuthForm({ onLogin }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (isSignup) {
       if (password !== confirmPassword) {
         alert("Passwords do not match!");
         return;
       }
-      localStorage.setItem("user", JSON.stringify({ email, password }));
-      alert("Signup successful! Please log in.");
-      setIsSignup(false);
+
+      try {
+        const res = await fetch("http://127.0.0.1:5000/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert("Signup successful! Please log in.");
+          setIsSignup(false);
+        } else {
+          alert(data.error || "Signup failed");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error connecting to server.");
+      }
     } else {
-      const storedUser = JSON.parse(localStorage.getItem("user"));
-      if (storedUser && storedUser.email === email && storedUser.password === password) {
-        onLogin(email);
-      } else {
-        alert("Invalid email or password.");
+      try {
+        const res = await fetch("http://127.0.0.1:5000/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem("token", data.token || ""); // store token if returned
+          localStorage.setItem("email", email);
+          onLogin(email);
+        } else {
+          alert(data.error || "Invalid email or password");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error connecting to server.");
       }
     }
   };
@@ -45,6 +75,7 @@ function AuthForm({ onLogin }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           fullWidth
+          required
           sx={{ mb: 2 }}
         />
         <TextField
@@ -53,6 +84,7 @@ function AuthForm({ onLogin }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           fullWidth
+          required
           sx={{ mb: 2 }}
         />
         {isSignup && (
@@ -62,6 +94,7 @@ function AuthForm({ onLogin }) {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             fullWidth
+            required
             sx={{ mb: 2 }}
           />
         )}

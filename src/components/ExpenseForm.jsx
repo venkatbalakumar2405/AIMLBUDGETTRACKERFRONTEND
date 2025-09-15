@@ -2,23 +2,27 @@ import React, { useState } from "react";
 import { Box, TextField, Button } from "@mui/material";
 
 function ExpenseForm({ onSubmit }) {
-  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!name || !amount) return;
-    onSubmit({ name, amount: Number(amount) });
-    setName("");
+    if (!description || !amount) return;
+
+    // match backend: description + amount
+    onSubmit({ description, amount: Number(amount) });
+
+    // reset fields
+    setDescription("");
     setAmount("");
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mb: 2 }}>
       <TextField
-        label="Expense Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        label="Expense Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
         fullWidth
         sx={{ mb: 2 }}
       />
@@ -37,4 +41,4 @@ function ExpenseForm({ onSubmit }) {
   );
 }
 
-export default ExpenseForm; 
+export default ExpenseForm;

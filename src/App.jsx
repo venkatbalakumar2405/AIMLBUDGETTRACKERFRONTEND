@@ -9,6 +9,7 @@ import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import Dashboard from "./components/Dashboard";
 import AuthForm from "./components/AuthForm";
+import Register from "./components/Register";
 
 // Flask backend URL
 const API_URL = "http://127.0.0.1:5000";
@@ -155,8 +156,15 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {/* 🔘 Dark Mode Toggle */}
       <div style={{ position: "absolute", top: 10, right: 10 }}>
-        <IconButton onClick={() => setDarkMode(!darkMode)} color="inherit">
+        <IconButton
+          onClick={() => {
+            setDarkMode(!darkMode);
+            localStorage.setItem("darkMode", !darkMode);
+          }}
+          color="inherit"
+        >
           {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
         </IconButton>
       </div>

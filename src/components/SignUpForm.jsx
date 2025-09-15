@@ -1,27 +1,34 @@
-
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, Paper } from "@mui/material";
+import { TextField, Button, Typography, Paper } from "@mui/material";
+import API from "../api"; // axios instance (baseURL = http://127.0.0.1:5000)
 
 function SignUpForm({ onSignUp }) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [salary, setSalary] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (password !== confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-    const users = JSON.parse(localStorage.getItem("users")) || {};
-    if (users[username]) {
-      alert("User already exists!");
-      return;
+
+    try {
+      const res = await API.post("/auth/register", {
+        email,
+        password,
+        salary: parseFloat(salary) || 0,
+      });
+
+      alert(res.data.message || "Account created successfully!");
+      onSignUp(); // redirect to login page
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Signup failed");
     }
-    users[username] = { password, salary: 0, expenses: [] };
-    localStorage.setItem("users", JSON.stringify(users));
-    alert("Account created successfully! Please login.");
-    onSignUp();
   };
 
   return (
@@ -31,11 +38,21 @@ function SignUpForm({ onSignUp }) {
       </Typography>
       <form onSubmit={handleSubmit}>
         <TextField
-          label="Username"
+          label="Email"
+          type="email"
           fullWidth
           margin="normal"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <TextField
+          label="Salary"
+          type="number"
+          fullWidth
+          margin="normal"
+          value={salary}
+          onChange={(e) => setSalary(e.target.value)}
           required
         />
         <TextField
