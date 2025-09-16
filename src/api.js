@@ -108,7 +108,15 @@ export async function downloadReport(email, format) {
   a.click();
   a.remove();
 }
+
+/** 🔹 Get monthly trends */
 export async function getMonthlyTrends(email) {
   const res = await fetch(`${API_URL}/budget/monthly-trends?email=${email}`);
   return handleResponse(res); // { monthly_trends: [...] }
+}
+
+/** 🔹 Get daily expense trends (salary, expenses, savings) */
+export async function getTrends(email) {
+  const res = await fetch(`${API_URL}/budget/trends?email=${email}`);
+  return handleResponse(res); // { salary, total_expenses, savings, expenses: [...] }
 }
