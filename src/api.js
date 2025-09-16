@@ -1,13 +1,12 @@
-// api.js
-const API_URL = "http://localhost:5000"; // ✅ Use localhost (same as frontend)
+const API_URL = "http://localhost:5000"; // ✅ Flask backend
 
-/** 🔹 Helper: handle fetch responses */
+/** 🔹 Handle fetch responses */
 async function handleResponse(res) {
   let data = {};
   try {
     data = await res.json();
   } catch {
-    // if backend sends no JSON, fallback to empty
+    // If backend sends no JSON (like file downloads), fallback to {}
   }
 
   if (!res.ok) {
@@ -18,7 +17,7 @@ async function handleResponse(res) {
   return data;
 }
 
-/** 🔹 Helper: safe fetch (catches network errors) */
+/** 🔹 Safe fetch wrapper */
 async function safeFetch(url, options = {}) {
   try {
     const res = await fetch(url, options);
@@ -30,7 +29,6 @@ async function safeFetch(url, options = {}) {
 }
 
 /** ================== AUTH ================== */
-
 export function registerUser(email, password) {
   return safeFetch(`${API_URL}/auth/register`, {
     method: "POST",
@@ -52,16 +50,23 @@ export function getProfile(email) {
 }
 
 /** ================== BUDGET ================== */
-
 export function getExpenses(email) {
   return safeFetch(`${API_URL}/budget/expenses?email=${email}`);
 }
 
 export function addExpense(email, expense) {
+  // ✅ Clean and send properly formatted amount/date
+  const payload = {
+    ...expense,
+    email,
+    amount: expense.amount ? String(expense.amount).trim() : null,
+    date: expense.date || null,
+  };
+
   return safeFetch(`${API_URL}/budget/add`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...expense, email }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -95,21 +100,25 @@ export function resetAll(email) {
   });
 }
 
+/** ================== REPORTS ================== */
 export async function downloadReport(email, format) {
   try {
     const res = await fetch(
       `${API_URL}/budget/download-expenses-${format}?email=${email}`
     );
+
     if (!res.ok) throw new Error(`Failed to download ${format.toUpperCase()}`);
 
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
 
+    // ✅ Map formats to extensions
+    const extMap = { csv: "csv", excel: "xlsx", pdf: "pdf" };
+    const ext = extMap[format] || format;
+
     const a = document.createElement("a");
     a.href = url;
-    a.download = `expenses_${new Date()
-      .toISOString()
-      .slice(0, 10)}.${format}`;
+    a.download = `expenses_${new Date().toISOString().slice(0, 10)}.${ext}`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -119,6 +128,7 @@ export async function downloadReport(email, format) {
   }
 }
 
+/** ================== TRENDS ================== */
 export function getMonthlyTrends(email) {
   return safeFetch(`${API_URL}/budget/monthly-trends?email=${email}`);
 }

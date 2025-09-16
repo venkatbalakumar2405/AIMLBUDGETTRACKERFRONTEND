@@ -14,48 +14,48 @@ function AuthForm({ onLogin }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+  const [message, setMessage] = useState(null);
+
+  // 🔹 helper for API requests
+  const sendRequest = async (url, payload) => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.json().then((data) => ({ ok: res.ok, data }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage({ type: "", text: "" });
+    setMessage(null);
 
-    if (isSignup) {
-      if (password !== confirmPassword) {
-        setMessage({ type: "error", text: "Passwords do not match!" });
-        setLoading(false);
-        return;
-      }
+    try {
+      if (isSignup) {
+        if (password !== confirmPassword) {
+          setMessage({ type: "error", text: "Passwords do not match!" });
+          return;
+        }
 
-      try {
-        const res = await fetch("http://127.0.0.1:5000/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
+        const { ok, data } = await sendRequest(
+          "http://127.0.0.1:5000/auth/register",
+          { email, password }
+        );
 
-        const data = await res.json();
-        if (res.ok) {
+        if (ok) {
           setMessage({ type: "success", text: "Signup successful! Please log in." });
           setIsSignup(false);
         } else {
           setMessage({ type: "error", text: data.error || "Signup failed" });
         }
-      } catch (err) {
-        console.error(err);
-        setMessage({ type: "error", text: "Error connecting to server." });
-      }
-    } else {
-      try {
-        const res = await fetch("http://127.0.0.1:5000/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
+      } else {
+        const { ok, data } = await sendRequest(
+          "http://127.0.0.1:5000/auth/login",
+          { email, password }
+        );
 
-        const data = await res.json();
-        if (res.ok) {
+        if (ok) {
           if (data.token) {
             localStorage.setItem("token", data.token);
           }
@@ -65,13 +65,13 @@ function AuthForm({ onLogin }) {
         } else {
           setMessage({ type: "error", text: data.error || "Invalid email or password" });
         }
-      } catch (err) {
-        console.error(err);
-        setMessage({ type: "error", text: "Error connecting to server." });
       }
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "error", text: "Error connecting to server." });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -80,7 +80,7 @@ function AuthForm({ onLogin }) {
         {isSignup ? "Sign Up" : "Login"}
       </Typography>
 
-      {message.text && (
+      {message && (
         <Alert severity={message.type} sx={{ mb: 2 }}>
           {message.text}
         </Alert>

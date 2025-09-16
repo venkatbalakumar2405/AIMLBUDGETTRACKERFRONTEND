@@ -10,10 +10,6 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 import Dashboard from "./components/Dashboard";
 import AuthForm from "./components/AuthForm";
-import Register from "./components/Register";
-import MonthlyTrends from "./components/MonthlyTrends";
-import ExpenseTrends from "./components/ExpenseTrends";
-
 
 // ✅ Import API helpers
 import {
@@ -32,7 +28,7 @@ export default function App() {
   const [expenses, setExpenses] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
 
-  // ✅ Theme setup
+  /** ================== THEME ================== */
   const theme = useMemo(
     () =>
       createTheme({
@@ -45,10 +41,9 @@ export default function App() {
     [darkMode]
   );
 
-  // ✅ Load session + theme from localStorage
+  /** ================== SESSION & THEME LOAD ================== */
   useEffect(() => {
-    const savedTheme = localStorage.getItem("darkMode") === "true";
-    setDarkMode(savedTheme);
+    setDarkMode(localStorage.getItem("darkMode") === "true");
 
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
     const user = localStorage.getItem("currentUser");
@@ -60,60 +55,58 @@ export default function App() {
     }
   }, []);
 
-  // ✅ Fetch salary + expenses from backend
+  /** ================== FETCH EXPENSES ================== */
   const fetchUserData = async (email) => {
     try {
       const res = await apiGetExpenses(email);
-      setExpenses(res.data || []);
+      setExpenses(res.expenses || []);
+      setSalary(res.salary || 0);
     } catch (err) {
-      console.error("Error fetching expenses:", err);
+      console.error("❌ Error fetching user data:", err);
     }
   };
 
-  // ✅ Salary update
+  /** ================== SALARY ================== */
   const handleSalary = async (amount) => {
     const newSalary = Number(amount);
     setSalary(newSalary);
     try {
       await apiUpdateSalary(currentUser, newSalary);
     } catch (err) {
-      console.error("Error updating salary:", err);
+      console.error("❌ Error updating salary:", err);
       alert("Failed to update salary");
     }
   };
 
-  // ✅ Add expense
+  /** ================== EXPENSES ================== */
   const addExpense = async (expense) => {
     try {
-      await apiAddExpense(currentUser, expense.amount, expense.description);
+      await apiAddExpense(currentUser, expense);
       fetchUserData(currentUser);
     } catch (err) {
-      console.error("Error adding expense:", err);
+      console.error("❌ Error adding expense:", err);
       alert("Failed to add expense");
     }
   };
 
-  // ✅ Update expense
-  const updateExpense = async (id, updated) => {
+  const updateExpense = async (id, updatedExpense) => {
     try {
-      await apiUpdateExpense(id, updated.amount, updated.description);
+      await apiUpdateExpense(id, updatedExpense);
       fetchUserData(currentUser);
     } catch (err) {
-      console.error("Error updating expense:", err);
+      console.error("❌ Error updating expense:", err);
     }
   };
 
-  // ✅ Delete expense
   const deleteExpense = async (id) => {
     try {
       await apiDeleteExpense(id);
       fetchUserData(currentUser);
     } catch (err) {
-      console.error("Error deleting expense:", err);
+      console.error("❌ Error deleting expense:", err);
     }
   };
 
-  // ✅ Reset all data
   const resetAll = async () => {
     if (window.confirm("Clear all data?")) {
       try {
@@ -121,23 +114,23 @@ export default function App() {
         setSalary(0);
         setExpenses([]);
       } catch (err) {
-        console.error("Error resetting data:", err);
+        console.error("❌ Error resetting data:", err);
       }
     }
   };
 
-  // ✅ Logout
+  /** ================== AUTH ================== */
   const logout = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
-    localStorage.setItem("isLoggedIn", false);
+    localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("currentUser");
   };
 
-  // ✅ Balance
+  /** ================== BALANCE ================== */
   const balance = salary - expenses.reduce((a, e) => a + e.amount, 0);
 
-  // ✅ Currency formatter
+  /** ================== CURRENCY ================== */
   const formatCurrency = (value) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -148,12 +141,14 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+
       {/* 🔘 Dark Mode Toggle */}
       <div style={{ position: "absolute", top: 10, right: 10 }}>
         <IconButton
           onClick={() => {
-            setDarkMode(!darkMode);
-            localStorage.setItem("darkMode", !darkMode);
+            const newMode = !darkMode;
+            setDarkMode(newMode);
+            localStorage.setItem("darkMode", newMode);
           }}
           color="inherit"
         >
