@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:5000"; // ✅ Flask backend
+// ✅ Dynamically use API URL from Vite env
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 /** 🔹 Handle fetch responses */
 async function handleResponse(res) {
@@ -55,7 +56,6 @@ export function getExpenses(email) {
 }
 
 export function addExpense(email, expense) {
-  // ✅ Clean and send properly formatted amount/date
   const payload = {
     ...expense,
     email,
@@ -112,7 +112,6 @@ export async function downloadReport(email, format) {
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
 
-    // ✅ Map formats to extensions
     const extMap = { csv: "csv", excel: "xlsx", pdf: "pdf" };
     const ext = extMap[format] || format;
 
