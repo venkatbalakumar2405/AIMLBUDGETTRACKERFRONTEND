@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Paper, CircularProgress, Button } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  CircularProgress,
+  Button,
+} from "@mui/material";
 import {
   PieChart,
   Pie,
@@ -12,6 +18,7 @@ import {
   CartesianGrid,
   Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 import { getTrends } from "../api"; // backend: /budget/trends
 
@@ -53,7 +60,7 @@ function ExpenseTrends({ email }) {
           {error}
         </Typography>
         <Button variant="contained" onClick={fetchTrends}>
-          🔄 Retry
+          Retry
         </Button>
       </Box>
     );
@@ -74,6 +81,7 @@ function ExpenseTrends({ email }) {
           date: e.date,
           spent: cumulative,
           salary: data.salary || 0,
+          budget: data.budget || 0, // ✅ include budget line
         };
       })
     : [];
@@ -84,7 +92,7 @@ function ExpenseTrends({ email }) {
   return (
     <Box sx={{ mt: 4 }}>
       <Typography variant="h6" gutterBottom>
-        📊 Expense Trends
+        Expense Trends
       </Typography>
 
       <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
@@ -113,7 +121,7 @@ function ExpenseTrends({ email }) {
           </ResponsiveContainer>
         </Paper>
 
-        {/* Line Chart */}
+        {/* Line Chart with Danger Line */}
         <Paper sx={{ flex: "2 1 500px", height: 300, p: 2 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={lineData}>
@@ -122,8 +130,20 @@ function ExpenseTrends({ email }) {
               <YAxis />
               <Tooltip />
               <Legend />
+
+              {/* Salary Line */}
               <Line type="monotone" dataKey="salary" stroke="#2563eb" />
+
+              {/* Spent Line */}
               <Line type="monotone" dataKey="spent" stroke="#f87171" />
+
+              {/* Budget Danger Line */}
+              <ReferenceLine
+                y={data.budget}
+                label="Budget Limit"
+                stroke="#ff0000"
+                strokeDasharray="5 5"
+              />
             </LineChart>
           </ResponsiveContainer>
         </Paper>

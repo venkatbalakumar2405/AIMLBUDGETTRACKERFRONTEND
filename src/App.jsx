@@ -10,6 +10,10 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 import Dashboard from "./components/Dashboard";
 import AuthForm from "./components/AuthForm";
+import  TransactionPage from "./components/TransactionPage";  
+import MonthlyTrends from "./components/MonthlyTrends";
+import ExpenseTrends from "./components/ExpenseTrends";
+import TransactionTracker from "./components/TransactionTracker";
 
 // ✅ Import API helpers
 import {
