@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { getMonthlyTrends } from "../api"; // ✅ Correct endpoint
 import { Box, Typography } from "@mui/material";
 import {
   PieChart,
@@ -12,7 +11,9 @@ import {
   YAxis,
   CartesianGrid,
   Legend,
+  ResponsiveContainer,
 } from "recharts";
+import { getTrends } from "../api"; // ✅ backend: /budget/trends
 
 function ExpenseTrends({ email }) {
   const [data, setData] = useState(null);
@@ -20,7 +21,7 @@ function ExpenseTrends({ email }) {
   useEffect(() => {
     const fetchTrends = async () => {
       try {
-        const result = await getMonthlyTrends(email); // ✅ FIXED
+        const result = await getTrends(email);
         setData(result);
       } catch (err) {
         console.error("Failed to fetch trends:", err);
@@ -31,20 +32,20 @@ function ExpenseTrends({ email }) {
 
   if (!data) return <Typography>Loading trends...</Typography>;
 
-  // ✅ Pie chart data
+  // ✅ Pie chart data (summary)
   const pieData = [
-    { name: "Expenses", value: data.total_expenses || 0 },
-    { name: "Savings", value: data.savings || 0 },
+    { name: "Expenses", value: data.total_expenses },
+    { name: "Savings", value: data.savings },
   ];
 
-  // ✅ Line chart data (cumulative expenses vs salary)
+  // ✅ Line chart data (expenses over time)
   let cumulative = 0;
-  const lineData = (data.expenses || []).map((e) => {
+  const lineData = data.expenses.map((e) => {
     cumulative += e.amount;
     return {
-      description: e.description,
+      date: e.date, // ✅ proper date from backend
       spent: cumulative,
-      salary: data.salary || 0,
+      salary: data.salary,
     };
   });
 
@@ -55,33 +56,37 @@ function ExpenseTrends({ email }) {
       </Typography>
 
       <Box sx={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {/* Pie Chart */}
-        <PieChart width={300} height={300}>
-          <Pie
-            data={pieData}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            label
-          >
-            <Cell fill="#f87171" /> {/* Expenses in red */}
-            <Cell fill="#34d399" /> {/* Savings in green */}
-          </Pie>
-          <Tooltip />
-        </PieChart>
+        {/* Pie Chart (Expenses vs Savings) */}
+        <ResponsiveContainer width={300} height={300}>
+          <PieChart>
+            <Pie
+              data={pieData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              label
+            >
+              <Cell fill="#f87171" /> {/* Expenses in red */}
+              <Cell fill="#34d399" /> {/* Savings in green */}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
 
-        {/* Line Chart */}
-        <LineChart width={400} height={300} data={lineData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="description" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="salary" stroke="#2563eb" />
-          <Line type="monotone" dataKey="spent" stroke="#f87171" />
-        </LineChart>
+        {/* Line Chart (Cumulative Expenses vs Salary over time) */}
+        <ResponsiveContainer width={500} height={300}>
+          <LineChart data={lineData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="salary" stroke="#2563eb" />
+            <Line type="monotone" dataKey="spent" stroke="#f87171" />
+          </LineChart>
+        </ResponsiveContainer>
       </Box>
     </Box>
   );
