@@ -8,6 +8,9 @@ import {
   Alert,
 } from "@mui/material";
 
+// ✅ Use Vite env variables (fallback to localhost)
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 function AuthForm({ onLogin }) {
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState("");
@@ -16,9 +19,9 @@ function AuthForm({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
-  // 🔹 helper for API requests
-  const sendRequest = async (url, payload) => {
-    const res = await fetch(url, {
+  // 🔹 Helper for API requests
+  const sendRequest = async (endpoint, payload) => {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -38,22 +41,25 @@ function AuthForm({ onLogin }) {
           return;
         }
 
-        const { ok, data } = await sendRequest(
-          "http://127.0.0.1:5000/auth/register",
-          { email, password }
-        );
+        const { ok, data } = await sendRequest("/auth/register", {
+          email,
+          password,
+        });
 
         if (ok) {
-          setMessage({ type: "success", text: "Signup successful! Please log in." });
+          setMessage({
+            type: "success",
+            text: "Signup successful! Please log in.",
+          });
           setIsSignup(false);
         } else {
           setMessage({ type: "error", text: data.error || "Signup failed" });
         }
       } else {
-        const { ok, data } = await sendRequest(
-          "http://127.0.0.1:5000/auth/login",
-          { email, password }
-        );
+        const { ok, data } = await sendRequest("/auth/login", {
+          email,
+          password,
+        });
 
         if (ok) {
           if (data.token) {
@@ -63,7 +69,10 @@ function AuthForm({ onLogin }) {
           onLogin(email);
           setMessage({ type: "success", text: "Login successful!" });
         } else {
-          setMessage({ type: "error", text: data.error || "Invalid email or password" });
+          setMessage({
+            type: "error",
+            text: data.error || "Invalid email or password",
+          });
         }
       }
     } catch (err) {
