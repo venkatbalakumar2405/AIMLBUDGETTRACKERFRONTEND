@@ -7,6 +7,8 @@ async function handleResponse(res) {
   return data;
 }
 
+/** ================== AUTH ================== */
+
 /** 🔹 Register user */
 export async function registerUser(email, password) {
   const res = await fetch(`${API_URL}/auth/register`, {
@@ -17,11 +19,23 @@ export async function registerUser(email, password) {
   return handleResponse(res);
 }
 
+/** 🔹 Login user */
+export async function loginUser(email, password) {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  return handleResponse(res); // { message, email }
+}
+
 /** 🔹 Get user profile (salary + expenses) */
 export async function getProfile(email) {
   const res = await fetch(`${API_URL}/auth/user/${email}`);
-  return handleResponse(res); // { salary, expenses: [...] }
+  return handleResponse(res); // { email, salary, expenses: [...] }
 }
+
+/** ================== BUDGET ================== */
 
 /** 🔹 Get only expenses */
 export async function getExpenses(email) {
@@ -76,16 +90,8 @@ export async function resetAll(email) {
   });
   return handleResponse(res);
 }
-export async function loginUser(email, password) {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  return handleResponse(res); // { message, token }
-}
 
-/** 🔹 Download expense reports (CSV, PDF, Excel, etc.) */
+/** 🔹 Download expense reports (CSV, PDF, Excel) */
 export async function downloadReport(email, format) {
   const res = await fetch(
     `${API_URL}/budget/download-expenses-${format}?email=${email}`
@@ -94,6 +100,7 @@ export async function downloadReport(email, format) {
 
   const blob = await res.blob();
   const url = window.URL.createObjectURL(blob);
+
   const a = document.createElement("a");
   a.href = url;
   a.download = `expenses_${new Date().toISOString().slice(0, 10)}.${format}`;
