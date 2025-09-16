@@ -2,24 +2,35 @@ import React, { useEffect, useState } from "react";
 import { getMonthlyTrends } from "../api";
 import { Box, Typography } from "@mui/material";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from "recharts";
 
 function MonthlyTrends({ email }) {
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchTrends = async () => {
       try {
         const result = await getMonthlyTrends(email);
-        setData(result.monthly_trends || []);
+        setData(result?.monthly_trends || []);
       } catch (err) {
         console.error("Failed to fetch monthly trends:", err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchTrends();
+    if (email) fetchTrends();
   }, [email]);
 
+  if (loading) return <Typography>Loading monthly trends...</Typography>;
   if (!data.length) return <Typography>No monthly data available</Typography>;
 
   return (
@@ -35,9 +46,27 @@ function MonthlyTrends({ email }) {
           <YAxis />
           <Tooltip />
           <Legend />
-          <Area type="monotone" dataKey="salary" stroke="#2563eb" fill="#2563eb33" />
-          <Area type="monotone" dataKey="total_expenses" stroke="#f87171" fill="#f8717133" />
-          <Area type="monotone" dataKey="savings" stroke="#34d399" fill="#34d39933" />
+          <Area
+            type="monotone"
+            dataKey="salary"
+            stroke="#2563eb"
+            fill="#2563eb33"
+            name="Salary"
+          />
+          <Area
+            type="monotone"
+            dataKey="total_expenses"
+            stroke="#f87171"
+            fill="#f8717133"
+            name="Expenses"
+          />
+          <Area
+            type="monotone"
+            dataKey="savings"
+            stroke="#34d399"
+            fill="#34d39933"
+            name="Savings"
+          />
         </AreaChart>
       </ResponsiveContainer>
     </Box>

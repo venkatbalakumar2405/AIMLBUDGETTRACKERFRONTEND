@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { getMonthlyTrends } from "../api";// ✅ new endpoint
+import { getMonthlyTrends } from "../api"; // ✅ Correct endpoint
 import { Box, Typography } from "@mui/material";
 import {
-  PieChart, Pie, Cell, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
 } from "recharts";
 
 function ExpenseTrends({ email }) {
@@ -11,7 +20,7 @@ function ExpenseTrends({ email }) {
   useEffect(() => {
     const fetchTrends = async () => {
       try {
-        const result = await getTrends(email);
+        const result = await getMonthlyTrends(email); // ✅ FIXED
         setData(result);
       } catch (err) {
         console.error("Failed to fetch trends:", err);
@@ -24,18 +33,18 @@ function ExpenseTrends({ email }) {
 
   // ✅ Pie chart data
   const pieData = [
-    { name: "Expenses", value: data.total_expenses },
-    { name: "Savings", value: data.savings },
+    { name: "Expenses", value: data.total_expenses || 0 },
+    { name: "Savings", value: data.savings || 0 },
   ];
 
   // ✅ Line chart data (cumulative expenses vs salary)
   let cumulative = 0;
-  const lineData = data.expenses.map((e) => {
+  const lineData = (data.expenses || []).map((e) => {
     cumulative += e.amount;
     return {
       description: e.description,
       spent: cumulative,
-      salary: data.salary,
+      salary: data.salary || 0,
     };
   });
 
