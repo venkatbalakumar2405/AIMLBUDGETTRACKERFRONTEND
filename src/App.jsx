@@ -11,8 +11,9 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 import Dashboard from "./components/Dashboard";
 import AuthForm from "./components/AuthForm";
 import Register from "./components/Register";
-import Login from "./components/Login";
+import MonthlyTrends from "./components/MonthlyTrends";
 import ExpenseTrends from "./components/ExpenseTrends";
+
 
 // ✅ Import API helpers
 import {
