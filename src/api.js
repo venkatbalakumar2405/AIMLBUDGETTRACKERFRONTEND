@@ -108,3 +108,7 @@ export async function downloadReport(email, format) {
   a.click();
   a.remove();
 }
+export async function getMonthlyTrends(email) {
+  const res = await fetch(`${API_URL}/budget/monthly-trends?email=${email}`);
+  return handleResponse(res); // { monthly_trends: [...] }
+}

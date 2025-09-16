@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getTrends } from "../api"; // ✅ new endpoint
+import { getMonthlyTrends } from "../api";// ✅ new endpoint
 import { Box, Typography } from "@mui/material";
 import {
   PieChart, Pie, Cell, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend,
