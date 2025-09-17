@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-// ✅ API base URL from Vite env
+// ✅ API base URL from Vite env or fallback
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function useUserProfile() {
@@ -10,8 +10,9 @@ export default function useUserProfile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const email = localStorage.getItem("currentUser");
-      const token = localStorage.getItem("token");
+      // ✅ match backend login response keys
+      const email = localStorage.getItem("user_email");
+      const token = localStorage.getItem("access_token");
 
       if (!email || !token) {
         setError("User not logged in");
@@ -24,15 +25,16 @@ export default function useUserProfile() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // ✅ JWT token
+            "Authorization": `Bearer ${token}`, // ✅ correct JWT header
           },
         });
 
         if (!res.ok) {
           if (res.status === 401) {
             setError("Session expired. Please login again.");
-            localStorage.removeItem("token");
-            localStorage.removeItem("currentUser");
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            localStorage.removeItem("user_email");
           } else {
             setError(`Error ${res.status}: Failed to fetch profile`);
           }
@@ -54,5 +56,5 @@ export default function useUserProfile() {
     fetchProfile();
   }, []);
 
-  return { profile, loading, error }; // ✅ Always consistent
+  return { profile, loading, error };
 }

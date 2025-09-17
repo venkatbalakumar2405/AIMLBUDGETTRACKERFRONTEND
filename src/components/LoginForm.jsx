@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { TextField, Button, Typography, Paper } from "@mui/material";
-import { loginUser } from "../api"; // ✅ named import
+import { loginUser } from "../api"; // ✅ API call for login
 
 function LoginForm({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -14,12 +14,13 @@ function LoginForm({ onLogin }) {
     try {
       const res = await loginUser(email, password);
 
-      // Save session info
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("currentUser", res.email);
+      // ✅ Save tokens + user info for session management
+      localStorage.setItem("access_token", res.access_token);
+      localStorage.setItem("refresh_token", res.refresh_token);
+      localStorage.setItem("user_email", res.email);
 
-      alert(res.message || "✅ Login successful!");
-      onLogin(true);
+      alert("✅ Login successful!");
+      if (onLogin) onLogin(true); // notify parent
     } catch (err) {
       console.error("❌ Login error:", err);
       alert(err.message || "Login failed. Please try again.");
