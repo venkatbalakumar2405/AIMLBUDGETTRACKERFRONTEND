@@ -1,10 +1,11 @@
-// src/App.jsx
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   ThemeProvider,
   createTheme,
   CssBaseline,
   IconButton,
+  CircularProgress,
+  Box,
 } from "@mui/material";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
@@ -29,6 +30,7 @@ export default function App() {
   const [expenses, setExpenses] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [booting, setBooting] = useState(true); // ✅ show spinner while restoring session
 
   /** ================== THEME ================== */
   const theme = useMemo(
@@ -47,33 +49,41 @@ export default function App() {
   useEffect(() => {
     setDarkMode(localStorage.getItem("darkMode") === "true");
 
-    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    const user = localStorage.getItem("currentUser");
+    // ✅ Try restoring from localStorage first, then sessionStorage
+    const email =
+      localStorage.getItem("currentUser") ||
+      sessionStorage.getItem("currentUser");
 
-    if (loggedIn && user) {
+    if (email) {
       setIsLoggedIn(true);
-      setCurrentUser(user);
-      refreshUserData(user);
+      setCurrentUser(email);
+      refreshUserData(email).finally(() => setBooting(false));
+    } else {
+      setBooting(false);
     }
-  }, []);
+  }, [refreshUserData]);
 
   /** ================== FETCH DATA ================== */
-  const refreshUserData = useCallback(
-    async (email) => {
-      if (!email) return;
-      try {
-        setLoading(true);
-        const res = await apiGetExpenses(email);
-        setExpenses(res.expenses || []);
-        setSalary(res.salary || 0);
-      } catch (err) {
-        console.error("❌ Error fetching user data:", err);
-      } finally {
-        setLoading(false);
+  const refreshUserData = useCallback(async (email) => {
+    if (!email) return;
+    try {
+      setLoading(true);
+      const res = await apiGetExpenses(email);
+
+      // ✅ if backend says unauthorized, force logout
+      if (res.error === "Unauthorized") {
+        logout();
+        return;
       }
-    },
-    []
-  );
+
+      setExpenses(res.expenses || []);
+      setSalary(res.salary || 0);
+    } catch (err) {
+      console.error("❌ Error fetching user data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   /** ================== SALARY ================== */
   const handleSalary = async (amount) => {
@@ -130,19 +140,22 @@ export default function App() {
   };
 
   /** ================== AUTH ================== */
-  const handleLogin = (email) => {
+  const handleLogin = (email, rememberMe) => {
     setIsLoggedIn(true);
     setCurrentUser(email);
-    localStorage.setItem("isLoggedIn", true);
-    localStorage.setItem("currentUser", email);
+
+    // ✅ Store based on rememberMe flag
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem("currentUser", email);
+
     refreshUserData(email);
   };
 
   const logout = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
-    localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("currentUser");
+    sessionStorage.removeItem("currentUser");
   };
 
   /** ================== BALANCE ================== */
@@ -155,6 +168,22 @@ export default function App() {
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(value);
+
+  /** ================== LOADING BOOT ================== */
+  if (booting) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          height: "100vh",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>

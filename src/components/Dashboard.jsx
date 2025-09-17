@@ -1,5 +1,5 @@
 // src/components/Dashboard.jsx
-import React from "react";
+import React, { useState, memo } from "react";
 import {
   Box,
   Typography,
@@ -18,6 +18,74 @@ import Balance from "./Balance";
 import ExpenseTrends from "./ExpenseTrends";
 import { downloadReport } from "../api";
 
+/** ================== LOADING OVERLAY ================== */
+const LoadingOverlay = ({ message = "Refreshing data..." }) => (
+  <Box
+    sx={{
+      position: "absolute",
+      inset: 0,
+      bgcolor: "rgba(255,255,255,0.7)",
+      zIndex: 1000,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <CircularProgress />
+    <Typography sx={{ mt: 2 }}>{message}</Typography>
+  </Box>
+);
+
+/** ================== HEADER ================== */
+const Header = ({ currentUser, onLogout }) => (
+  <Paper
+    elevation={3}
+    sx={{
+      p: 2,
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      mb: 3,
+    }}
+  >
+    <Typography variant="h5">💰 Budget Tracker</Typography>
+    <Box>
+      <Typography variant="subtitle1" component="span" sx={{ mr: 2 }}>
+        👋 Welcome, <strong>{currentUser}</strong>
+      </Typography>
+      <Button variant="contained" color="error" onClick={onLogout}>
+        🚪 Logout
+      </Button>
+    </Box>
+  </Paper>
+);
+
+/** ================== REPORT DOWNLOADS ================== */
+const Reports = ({ onDownload }) => (
+  <Box sx={{ textAlign: "center", mt: 3 }}>
+    <Typography variant="h6" gutterBottom>
+      📂 Download Reports
+    </Typography>
+    {[
+      { label: "📄 CSV", format: "csv", color: "primary" },
+      { label: "📊 Excel", format: "excel", color: "success" },
+      { label: "📕 PDF", format: "pdf", color: "secondary" },
+    ].map((btn) => (
+      <Button
+        key={btn.format}
+        variant="contained"
+        color={btn.color}
+        sx={{ m: 1 }}
+        onClick={() => onDownload(btn.format)}
+      >
+        {btn.label}
+      </Button>
+    ))}
+  </Box>
+);
+
+/** ================== DASHBOARD ================== */
 function Dashboard({
   currentUser,
   salary,
@@ -30,60 +98,35 @@ function Dashboard({
   deleteExpense,
   resetAll,
   logout,
-  loading, // ✅ added
+  loading,
 }) {
+  const [error, setError] = useState("");
+
   // 🔹 Report download handler
   const handleDownload = async (format) => {
     try {
+      setError("");
       await downloadReport(currentUser, format);
     } catch (err) {
       console.error("❌ Error downloading report:", err);
-      alert("Failed to download report.");
+      setError(`Failed to download ${format.toUpperCase()} report`);
     }
   };
 
   return (
     <Box sx={{ p: 3, position: "relative" }}>
-      {/* ✅ Fullscreen overlay when loading */}
-      {loading && (
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            bgcolor: "rgba(255,255,255,0.7)",
-            zIndex: 1000,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <CircularProgress />
-          <Typography sx={{ mt: 2 }}>Refreshing data...</Typography>
-        </Box>
-      )}
+      {/* Overlay */}
+      {loading && <LoadingOverlay />}
 
       {/* Header */}
-      <Paper
-        elevation={3}
-        sx={{
-          p: 2,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
-        <Typography variant="h5">💰 Budget Tracker</Typography>
-        <Box>
-          <Typography variant="subtitle1" component="span" sx={{ mr: 2 }}>
-            👋 Welcome, <strong>{currentUser}</strong>
-          </Typography>
-          <Button variant="contained" color="error" onClick={logout}>
-            🚪 Logout
-          </Button>
-        </Box>
-      </Paper>
+      <Header currentUser={currentUser} onLogout={logout} />
+
+      {/* Error banner */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       {/* Main Content */}
       <Grid container spacing={3}>
@@ -119,26 +162,7 @@ function Dashboard({
       </Box>
 
       {/* Downloads */}
-      <Box sx={{ textAlign: "center", mt: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          📂 Download Reports
-        </Typography>
-        {[
-          { label: "📄 CSV", format: "csv", color: "primary" },
-          { label: "📊 Excel", format: "excel", color: "success" },
-          { label: "📕 PDF", format: "pdf", color: "secondary" },
-        ].map((btn) => (
-          <Button
-            key={btn.format}
-            variant="contained"
-            color={btn.color}
-            sx={{ m: 1 }}
-            onClick={() => handleDownload(btn.format)}
-          >
-            {btn.label}
-          </Button>
-        ))}
-      </Box>
+      <Reports onDownload={handleDownload} />
 
       {/* Footer */}
       <Box sx={{ textAlign: "center", mt: 3 }}>
@@ -150,4 +174,4 @@ function Dashboard({
   );
 }
 
-export default Dashboard;
+export default memo(Dashboard);

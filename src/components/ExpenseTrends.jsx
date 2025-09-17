@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, memo } from "react";
 import {
   Box,
   Typography,
@@ -20,17 +20,120 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import { getTrends } from "../api"; // backend: /budget/trends
+import { getTrends } from "../api"; 
 
+/** ================== CONFIG ================== */
+const COLORS = ["#f87171", "#34d399"]; // red, green
+
+/** ================== UI STATES ================== */
+const LoadingState = () => (
+  <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+    <CircularProgress />
+  </Box>
+);
+
+const ErrorState = ({ message, onRetry }) => (
+  <Box sx={{ mt: 4, textAlign: "center" }}>
+    <Typography color="error" gutterBottom>
+      {message}
+    </Typography>
+    <Button variant="contained" onClick={onRetry}>
+      Retry
+    </Button>
+  </Box>
+);
+
+const EmptyState = () => (
+  <Typography sx={{ mt: 4, textAlign: "center" }}>
+    No trend data available yet.
+  </Typography>
+);
+
+/** ================== PIE CHART ================== */
+const ExpensesPie = ({ expenses, savings }) => {
+  const pieData = [
+    { name: "Expenses", value: expenses || 0 },
+    { name: "Savings", value: savings || 0 },
+  ];
+
+  return (
+    <Paper sx={{ flex: "1 1 300px", height: 300, p: 2 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={pieData}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius="80%"
+            label
+          >
+            {pieData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+    </Paper>
+  );
+};
+
+/** ================== LINE CHART ================== */
+const ExpensesLine = ({ expenses, salary, budget }) => {
+  let cumulative = 0;
+  const lineData = Array.isArray(expenses)
+    ? expenses.map((e) => {
+        cumulative += Number(e.amount) || 0;
+        return {
+          date: e.date,
+          spent: cumulative,
+          salary: salary || 0,
+          budget: budget || 0,
+        };
+      })
+    : [];
+
+  return (
+    <Paper sx={{ flex: "2 1 500px", height: 300, p: 2 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={lineData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="date" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+
+          <Line type="monotone" dataKey="salary" stroke="#2563eb" />
+          <Line type="monotone" dataKey="spent" stroke="#f87171" />
+
+          {budget > 0 && (
+            <ReferenceLine
+              y={budget}
+              label="Budget Limit"
+              stroke="#ff0000"
+              strokeDasharray="5 5"
+            />
+          )}
+        </LineChart>
+      </ResponsiveContainer>
+    </Paper>
+  );
+};
+
+/** ================== MAIN COMPONENT ================== */
 function ExpenseTrends({ email }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchTrends = async () => {
+  const fetchTrends = useCallback(async () => {
+    if (!email) return;
     try {
       setLoading(true);
       setError(null);
+
       const result = await getTrends(email);
       setData(result);
     } catch (err) {
@@ -39,117 +142,32 @@ function ExpenseTrends({ email }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    if (email) fetchTrends();
   }, [email]);
 
-  /** ================== LOADING & ERROR ================== */
-  if (loading)
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
+  useEffect(() => {
+    fetchTrends();
+  }, [fetchTrends]);
 
-  if (error)
-    return (
-      <Box sx={{ mt: 4, textAlign: "center" }}>
-        <Typography color="error" gutterBottom>
-          {error}
-        </Typography>
-        <Button variant="contained" onClick={fetchTrends}>
-          Retry
-        </Button>
-      </Box>
-    );
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={fetchTrends} />;
+  if (!data) return <EmptyState />;
 
-  if (!data) return <Typography>No trend data available.</Typography>;
-
-  /** ================== DATA PREP ================== */
-  const pieData = [
-    { name: "Expenses", value: data.total_expenses || 0 },
-    { name: "Savings", value: data.savings || 0 },
-  ];
-
-  let cumulative = 0;
-  const lineData = Array.isArray(data.expenses)
-    ? data.expenses.map((e) => {
-        cumulative += Number(e.amount) || 0;
-        return {
-          date: e.date,
-          spent: cumulative,
-          salary: data.salary || 0,
-          budget: data.budget || 0, // ✅ include budget line
-        };
-      })
-    : [];
-
-  const COLORS = ["#f87171", "#34d399"]; // red, green
-
-  /** ================== RENDER ================== */
   return (
     <Box sx={{ mt: 4 }}>
       <Typography variant="h6" gutterBottom>
-        Expense Trends
+        📈 Expense Trends
       </Typography>
 
       <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-        {/* Pie Chart */}
-        <Paper sx={{ flex: "1 1 300px", height: 300, p: 2 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={pieData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius="80%"
-                label
-              >
-                {pieData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </Paper>
-
-        {/* Line Chart with Danger Line */}
-        <Paper sx={{ flex: "2 1 500px", height: 300, p: 2 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={lineData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-
-              {/* Salary Line */}
-              <Line type="monotone" dataKey="salary" stroke="#2563eb" />
-
-              {/* Spent Line */}
-              <Line type="monotone" dataKey="spent" stroke="#f87171" />
-
-              {/* Budget Danger Line */}
-              <ReferenceLine
-                y={data.budget}
-                label="Budget Limit"
-                stroke="#ff0000"
-                strokeDasharray="5 5"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Paper>
+        <ExpensesPie expenses={data.total_expenses} savings={data.savings} />
+        <ExpensesLine
+          expenses={data.expenses}
+          salary={data.salary}
+          budget={data.budget}
+        />
       </Box>
     </Box>
   );
 }
 
-export default ExpenseTrends;
+export default memo(ExpenseTrends);

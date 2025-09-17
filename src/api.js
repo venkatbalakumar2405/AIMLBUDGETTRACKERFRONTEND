@@ -1,3 +1,4 @@
+// ✅ Dynamically use API URL from Vite env
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
 
 /** 🔹 Handle fetch responses */
@@ -17,21 +18,22 @@ async function handleResponse(res) {
   return data;
 }
 
-/** 🔹 Safe fetch wrapper (auto-attach headers) */
+/** 🔹 Safe fetch wrapper with auth token support */
 async function safeFetch(url, options = {}) {
   const token = localStorage.getItem("access_token");
 
-  const finalOptions = {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
+  const headers = {
+    ...(options.headers || {}),
+    "Content-Type": "application/json",
   };
 
+  // 🔑 Auto-attach Authorization header if token exists
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   try {
-    const res = await fetch(url, finalOptions);
+    const res = await fetch(url, { ...options, headers });
     return await handleResponse(res);
   } catch (err) {
     console.error(`❌ Fetch failed: ${url}`, err);
@@ -55,21 +57,20 @@ export function loginUser(email, password) {
 }
 
 export function getProfile(email) {
-  return safeFetch(`${API_URL}/auth/user/${encodeURIComponent(email)}`);
+  return safeFetch(`${API_URL}/auth/user/${email}`);
 }
 
 /** ================== BUDGET ================== */
 export function getExpenses(email) {
-  return safeFetch(`${API_URL}/budget/expenses?email=${encodeURIComponent(email)}`);
+  return safeFetch(`${API_URL}/budget/expenses?email=${email}`);
 }
 
 export function addExpense(email, expense) {
   const payload = {
+    ...expense,
     email,
-    title: expense.title || "Untitled",
-    category: expense.category || "Other",
-    amount: Number(expense.amount) || 0,
-    date: expense.date || new Date().toISOString().slice(0, 10),
+    amount: expense.amount ? String(expense.amount).trim() : null,
+    date: expense.date || null,
   };
 
   return safeFetch(`${API_URL}/budget/add`, {
@@ -81,21 +82,20 @@ export function addExpense(email, expense) {
 export function updateExpense(id, updatedExpense) {
   return safeFetch(`${API_URL}/budget/update/${id}`, {
     method: "PUT",
-    body: JSON.stringify({
-      ...updatedExpense,
-      amount: Number(updatedExpense.amount) || 0,
-    }),
+    body: JSON.stringify(updatedExpense),
   });
 }
 
 export function deleteExpense(id) {
-  return safeFetch(`${API_URL}/budget/delete/${id}`, { method: "DELETE" });
+  return safeFetch(`${API_URL}/budget/delete/${id}`, {
+    method: "DELETE",
+  });
 }
 
 export function updateSalary(email, salary) {
   return safeFetch(`${API_URL}/budget/salary`, {
     method: "PUT",
-    body: JSON.stringify({ email, salary: Number(salary) || 0 }),
+    body: JSON.stringify({ email, salary }),
   });
 }
 
@@ -109,8 +109,13 @@ export function resetAll(email) {
 /** ================== REPORTS ================== */
 export async function downloadReport(email, format) {
   try {
+    const token = localStorage.getItem("access_token");
+
     const res = await fetch(
-      `${API_URL}/budget/download-expenses-${format}?email=${encodeURIComponent(email)}`
+      `${API_URL}/budget/download-expenses-${format}?email=${email}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
     );
 
     if (!res.ok) throw new Error(`Failed to download ${format.toUpperCase()}`);
@@ -135,11 +140,9 @@ export async function downloadReport(email, format) {
 
 /** ================== TRENDS ================== */
 export function getMonthlyTrends(email) {
-  return safeFetch(
-    `${API_URL}/budget/monthly-trends?email=${encodeURIComponent(email)}`
-  );
+  return safeFetch(`${API_URL}/budget/monthly-trends?email=${email}`);
 }
 
 export function getTrends(email) {
-  return safeFetch(`${API_URL}/budget/trends?email=${encodeURIComponent(email)}`);
+  return safeFetch(`${API_URL}/budget/trends?email=${email}`);
 }
