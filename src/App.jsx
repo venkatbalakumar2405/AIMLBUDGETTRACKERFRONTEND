@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
+// src/App.jsx
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   ThemeProvider,
   createTheme,
@@ -10,10 +11,6 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 import Dashboard from "./components/Dashboard";
 import AuthForm from "./components/AuthForm";
-import  TransactionPage from "./components/TransactionPage";  
-import MonthlyTrends from "./components/MonthlyTrends";
-import ExpenseTrends from "./components/ExpenseTrends";
-import TransactionTracker from "./components/TransactionTracker";
 
 // ✅ Import API helpers
 import {
@@ -31,6 +28,7 @@ export default function App() {
   const [salary, setSalary] = useState(0);
   const [expenses, setExpenses] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   /** ================== THEME ================== */
   const theme = useMemo(
@@ -45,7 +43,7 @@ export default function App() {
     [darkMode]
   );
 
-  /** ================== SESSION & THEME LOAD ================== */
+  /** ================== LOAD SESSION ================== */
   useEffect(() => {
     setDarkMode(localStorage.getItem("darkMode") === "true");
 
@@ -55,20 +53,27 @@ export default function App() {
     if (loggedIn && user) {
       setIsLoggedIn(true);
       setCurrentUser(user);
-      fetchUserData(user);
+      refreshUserData(user);
     }
   }, []);
 
-  /** ================== FETCH EXPENSES ================== */
-  const fetchUserData = async (email) => {
-    try {
-      const res = await apiGetExpenses(email);
-      setExpenses(res.expenses || []);
-      setSalary(res.salary || 0);
-    } catch (err) {
-      console.error("❌ Error fetching user data:", err);
-    }
-  };
+  /** ================== FETCH DATA ================== */
+  const refreshUserData = useCallback(
+    async (email) => {
+      if (!email) return;
+      try {
+        setLoading(true);
+        const res = await apiGetExpenses(email);
+        setExpenses(res.expenses || []);
+        setSalary(res.salary || 0);
+      } catch (err) {
+        console.error("❌ Error fetching user data:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   /** ================== SALARY ================== */
   const handleSalary = async (amount) => {
@@ -76,6 +81,7 @@ export default function App() {
     setSalary(newSalary);
     try {
       await apiUpdateSalary(currentUser, newSalary);
+      refreshUserData(currentUser);
     } catch (err) {
       console.error("❌ Error updating salary:", err);
       alert("Failed to update salary");
@@ -86,7 +92,7 @@ export default function App() {
   const addExpense = async (expense) => {
     try {
       await apiAddExpense(currentUser, expense);
-      fetchUserData(currentUser);
+      refreshUserData(currentUser);
     } catch (err) {
       console.error("❌ Error adding expense:", err);
       alert("Failed to add expense");
@@ -96,7 +102,7 @@ export default function App() {
   const updateExpense = async (id, updatedExpense) => {
     try {
       await apiUpdateExpense(id, updatedExpense);
-      fetchUserData(currentUser);
+      refreshUserData(currentUser);
     } catch (err) {
       console.error("❌ Error updating expense:", err);
     }
@@ -105,7 +111,7 @@ export default function App() {
   const deleteExpense = async (id) => {
     try {
       await apiDeleteExpense(id);
-      fetchUserData(currentUser);
+      refreshUserData(currentUser);
     } catch (err) {
       console.error("❌ Error deleting expense:", err);
     }
@@ -124,6 +130,14 @@ export default function App() {
   };
 
   /** ================== AUTH ================== */
+  const handleLogin = (email) => {
+    setIsLoggedIn(true);
+    setCurrentUser(email);
+    localStorage.setItem("isLoggedIn", true);
+    localStorage.setItem("currentUser", email);
+    refreshUserData(email);
+  };
+
   const logout = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
@@ -161,15 +175,7 @@ export default function App() {
       </div>
 
       {!isLoggedIn ? (
-        <AuthForm
-          onLogin={(email) => {
-            setIsLoggedIn(true);
-            setCurrentUser(email);
-            localStorage.setItem("isLoggedIn", true);
-            localStorage.setItem("currentUser", email);
-            fetchUserData(email);
-          }}
-        />
+        <AuthForm onLogin={handleLogin} />
       ) : (
         <Dashboard
           currentUser={currentUser}
@@ -183,6 +189,7 @@ export default function App() {
           deleteExpense={deleteExpense}
           resetAll={resetAll}
           logout={logout}
+          loading={loading}
         />
       )}
     </ThemeProvider>

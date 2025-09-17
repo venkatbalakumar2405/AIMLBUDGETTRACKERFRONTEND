@@ -17,62 +17,52 @@ import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
 import ExpenseTrends from "./ExpenseTrends";
 import { downloadReport } from "../api";
-import useUserProfile from "../hooks/useUserProfile"; // ✅ FIXED PATH
 
-function Dashboard({ resetAll, logout }) {
-  const { profile, loading, error } = useUserProfile(); // ✅ keep consistent
-
-  // 🔹 Loading state
-  if (loading) {
-    return (
-      <Box sx={{ textAlign: "center", mt: 5 }}>
-        <CircularProgress />
-        <Typography sx={{ mt: 2 }}>Loading profile...</Typography>
-      </Box>
-    );
-  }
-
-  // 🔹 Error state
-  if (error) {
-    return (
-      <Box sx={{ textAlign: "center", mt: 5 }}>
-        <Alert severity="error">{error}</Alert>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={logout}
-          sx={{ mt: 2 }}
-        >
-          Go to Login
-        </Button>
-      </Box>
-    );
-  }
-
-  // 🔹 Destructure data safely
-  const { email, salary = 0, expenses = [] } = profile || {};
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const balance = salary - totalExpenses;
-
+function Dashboard({
+  currentUser,
+  salary,
+  expenses,
+  balance,
+  formatCurrency,
+  handleSalary,
+  addExpense,
+  updateExpense,
+  deleteExpense,
+  resetAll,
+  logout,
+  loading, // ✅ added
+}) {
   // 🔹 Report download handler
   const handleDownload = async (format) => {
     try {
-      await downloadReport(email, format);
+      await downloadReport(currentUser, format);
     } catch (err) {
       console.error("❌ Error downloading report:", err);
       alert("Failed to download report.");
     }
   };
 
-  // 🔹 Format currency
-  const formatCurrency = (val) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(val);
-
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, position: "relative" }}>
+      {/* ✅ Fullscreen overlay when loading */}
+      {loading && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            bgcolor: "rgba(255,255,255,0.7)",
+            zIndex: 1000,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <CircularProgress />
+          <Typography sx={{ mt: 2 }}>Refreshing data...</Typography>
+        </Box>
+      )}
+
       {/* Header */}
       <Paper
         elevation={3}
@@ -87,7 +77,7 @@ function Dashboard({ resetAll, logout }) {
         <Typography variant="h5">💰 Budget Tracker</Typography>
         <Box>
           <Typography variant="subtitle1" component="span" sx={{ mr: 2 }}>
-            👋 Welcome, <strong>{email}</strong>
+            👋 Welcome, <strong>{currentUser}</strong>
           </Typography>
           <Button variant="contained" color="error" onClick={logout}>
             🚪 Logout
@@ -99,11 +89,17 @@ function Dashboard({ resetAll, logout }) {
       <Grid container spacing={3}>
         {/* Left: Salary + Balance */}
         <Grid item xs={12} md={4}>
-          <SalaryForm email={email} salary={salary} onSalaryUpdate={() => {}} />
+          <SalaryForm
+            email={currentUser}
+            salary={salary}
+            onSalaryUpdate={handleSalary}
+          />
           <Box sx={{ mt: 2 }}>
             <Balance
               salary={formatCurrency(salary)}
-              expenses={formatCurrency(totalExpenses)}
+              expenses={formatCurrency(
+                expenses.reduce((sum, e) => sum + e.amount, 0)
+              )}
               balance={formatCurrency(balance)}
             />
           </Box>
@@ -111,15 +107,15 @@ function Dashboard({ resetAll, logout }) {
 
         {/* Right: Expenses */}
         <Grid item xs={12} md={8}>
-          <ExpenseForm email={email} onExpenseAdd={() => {}} />
+          <ExpenseForm email={currentUser} onExpenseAdd={addExpense} />
           <Divider sx={{ my: 2 }} />
-          <ExpenseList expenses={expenses} onDelete={() => {}} />
+          <ExpenseList expenses={expenses} onDelete={deleteExpense} />
         </Grid>
       </Grid>
 
       {/* Expense Trends */}
       <Box sx={{ mt: 4 }}>
-        <ExpenseTrends email={email} />
+        <ExpenseTrends email={currentUser} />
       </Box>
 
       {/* Downloads */}

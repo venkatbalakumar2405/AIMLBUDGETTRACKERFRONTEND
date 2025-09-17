@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ for navigation
 
-// ✅ API base URL from Vite env or fallback
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function useUserProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
-      // ✅ match backend login response keys
-      const email = localStorage.getItem("user_email");
+      const email = localStorage.getItem("currentUser");
       const token = localStorage.getItem("access_token");
 
       if (!email || !token) {
         setError("User not logged in");
         setLoading(false);
+        navigate("/login"); // ✅ redirect
         return;
       }
 
@@ -25,16 +26,15 @@ export default function useUserProfile() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`, // ✅ correct JWT header
+            Authorization: `Bearer ${token}`,
           },
         });
 
         if (!res.ok) {
           if (res.status === 401) {
             setError("Session expired. Please login again.");
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-            localStorage.removeItem("user_email");
+            localStorage.clear(); // ✅ clear all session data
+            navigate("/login");   // ✅ redirect
           } else {
             setError(`Error ${res.status}: Failed to fetch profile`);
           }
@@ -54,7 +54,7 @@ export default function useUserProfile() {
     };
 
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
   return { profile, loading, error };
 }
