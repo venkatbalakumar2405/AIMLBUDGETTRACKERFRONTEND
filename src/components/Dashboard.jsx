@@ -1,4 +1,5 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useCallback } from "react";
+import PropTypes from "prop-types";
 import {
   Box,
   Typography,
@@ -25,7 +26,7 @@ import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
 import ExpenseTrends from "./ExpenseTrends";
-import { ReportAPI } from "../api"; // ✅ use ReportAPI
+import { ReportAPI } from "../api";
 
 /** ================== LOADING OVERLAY ================== */
 const LoadingOverlay = ({ message = "Refreshing data..." }) => (
@@ -45,6 +46,10 @@ const LoadingOverlay = ({ message = "Refreshing data..." }) => (
     <Typography sx={{ mt: 2 }}>{message}</Typography>
   </Box>
 );
+
+LoadingOverlay.propTypes = {
+  message: PropTypes.string,
+};
 
 /** ================== HEADER ================== */
 const Header = ({ currentUser, onLogout }) => (
@@ -87,6 +92,11 @@ const Header = ({ currentUser, onLogout }) => (
   </Paper>
 );
 
+Header.propTypes = {
+  currentUser: PropTypes.string.isRequired,
+  onLogout: PropTypes.func.isRequired,
+};
+
 /** ================== REPORT DOWNLOADS ================== */
 const Reports = ({ onDownload }) => (
   <Box sx={{ textAlign: "center", mt: 3 }}>
@@ -112,6 +122,10 @@ const Reports = ({ onDownload }) => (
   </Box>
 );
 
+Reports.propTypes = {
+  onDownload: PropTypes.func.isRequired,
+};
+
 /** ================== DASHBOARD ================== */
 function Dashboard({
   currentUser,
@@ -128,20 +142,26 @@ function Dashboard({
   resetAll,
   logout,
   loading,
-  showToast, // ✅ injected from App.jsx
+  showToast,
 }) {
   const [error, setError] = useState("");
 
   // 🔹 Report download handler
-  const handleDownload = async (format) => {
-    try {
-      setError("");
-      await ReportAPI.download(currentUser, format);
-    } catch (err) {
-      console.error("❌ Error downloading report:", err);
-      setError(`Failed to download ${format.toUpperCase()} report`);
-    }
-  };
+  const handleDownload = useCallback(
+    async (format) => {
+      try {
+        setError("");
+        await ReportAPI.download(currentUser, format);
+      } catch (err) {
+        console.error("❌ Error downloading report:", err);
+        setError(`Failed to download ${format.toUpperCase()} report`);
+      }
+    },
+    [currentUser]
+  );
+
+  // 🔹 Derived totals
+  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
     <Box sx={{ p: 3, position: "relative" }}>
@@ -176,12 +196,12 @@ function Dashboard({
 
           <Box sx={{ mt: 2 }}>
             <Balance
-              salary={formatCurrency(salary)}
-              budget={formatCurrency(budget)}
-              expenses={formatCurrency(
-                expenses.reduce((sum, e) => sum + e.amount, 0)
-              )}
-              balance={formatCurrency(balance)}
+              salary={salary}
+              budget={budget}
+              expenses={totalExpenses}
+              balance={balance}
+              expenseList={expenses} // ✅ Pass raw list for categories
+              formatCurrency={formatCurrency}
             />
           </Box>
         </Grid>
@@ -221,5 +241,30 @@ function Dashboard({
     </Box>
   );
 }
+
+Dashboard.propTypes = {
+  currentUser: PropTypes.string.isRequired,
+  salary: PropTypes.number.isRequired,
+  budget: PropTypes.number.isRequired,
+  expenses: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string,
+      name: PropTypes.string,
+      amount: PropTypes.number,
+      category: PropTypes.string,
+    })
+  ).isRequired,
+  balance: PropTypes.number.isRequired,
+  formatCurrency: PropTypes.func.isRequired,
+  handleSalary: PropTypes.func.isRequired,
+  handleBudget: PropTypes.func.isRequired,
+  addExpense: PropTypes.func.isRequired,
+  updateExpense: PropTypes.func.isRequired,
+  deleteExpense: PropTypes.func.isRequired,
+  resetAll: PropTypes.func.isRequired,
+  logout: PropTypes.func.isRequired,
+  loading: PropTypes.bool,
+  showToast: PropTypes.func,
+};
 
 export default memo(Dashboard);

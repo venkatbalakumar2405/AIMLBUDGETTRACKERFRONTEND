@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import PropTypes from "prop-types";
 import {
   Box,
   List,
@@ -8,6 +9,7 @@ import {
   TextField,
   MenuItem,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -16,8 +18,8 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import { BudgetAPI } from "../api"; // ✅ use BudgetAPI
 
-// Centralized categories
-const categories = [
+/** ================== CATEGORY OPTIONS ================== */
+const CATEGORIES = [
   "Fuel",
   "Petrol",
   "Travel",
@@ -27,13 +29,18 @@ const categories = [
   "Other",
 ];
 
+/** ================== EXPENSE LIST ================== */
 function ExpenseList({ expenses, onDelete, onUpdate }) {
   const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({ name: "", amount: "", category: "Other" });
+  const [editData, setEditData] = useState({
+    name: "",
+    amount: "",
+    category: "Other",
+  });
   const [loading, setLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState("All");
 
-  /** Start editing */
+  /** 🔹 Start editing */
   const startEdit = (expense) => {
     setEditingId(expense.id);
     setEditData({
@@ -43,24 +50,29 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
     });
   };
 
-  /** Cancel edit */
+  /** 🔹 Cancel editing */
   const cancelEdit = () => {
     setEditingId(null);
     setEditData({ name: "", amount: "", category: "Other" });
   };
 
-  /** Save edit */
+  /** 🔹 Save changes */
   const saveEdit = async () => {
+    if (!editData.name.trim() || Number(editData.amount) <= 0) {
+      alert("⚠️ Please enter a valid expense name and amount");
+      return;
+    }
+
     try {
       setLoading(true);
       await BudgetAPI.updateExpense(editingId, {
-        name: editData.name,
+        name: editData.name.trim(),
         amount: Number(editData.amount),
         category: editData.category,
       });
 
       onUpdate(editingId, {
-        name: editData.name,
+        name: editData.name.trim(),
         amount: Number(editData.amount),
         category: editData.category,
       });
@@ -74,19 +86,22 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
     }
   };
 
-  /** Delete expense */
+  /** 🔹 Delete expense */
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this expense?")) return;
     try {
+      setLoading(true);
       await BudgetAPI.deleteExpense(id);
       onDelete(id);
     } catch (err) {
       console.error("❌ Error deleting expense:", err);
       alert(err.message || "Failed to delete expense");
+    } finally {
+      setLoading(false);
     }
   };
 
-  /** Apply category filter */
+  /** 🔹 Apply category filter */
   const filteredExpenses =
     filterCategory === "All"
       ? expenses
@@ -105,7 +120,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
           sx={{ minWidth: 200 }}
         >
           <MenuItem value="All">All</MenuItem>
-          {categories.map((cat) => (
+          {CATEGORIES.map((cat) => (
             <MenuItem key={cat} value={cat}>
               {cat}
             </MenuItem>
@@ -116,7 +131,11 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
       {/* Expense list */}
       <List>
         {filteredExpenses.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ ml: 2, fontStyle: "italic" }}
+          >
             No expenses found.
           </Typography>
         ) : (
@@ -126,25 +145,42 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
               secondaryAction={
                 editingId === expense.id ? (
                   <>
-                    <IconButton edge="end" onClick={saveEdit} disabled={loading}>
-                      <SaveIcon />
-                    </IconButton>
-                    <IconButton edge="end" onClick={cancelEdit}>
-                      <CloseIcon />
-                    </IconButton>
+                    <Tooltip title="Save">
+                      <IconButton
+                        edge="end"
+                        onClick={saveEdit}
+                        disabled={loading}
+                      >
+                        <SaveIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Cancel">
+                      <IconButton edge="end" onClick={cancelEdit}>
+                        <CloseIcon />
+                      </IconButton>
+                    </Tooltip>
                   </>
                 ) : (
                   <>
-                    <IconButton edge="end" onClick={() => startEdit(expense)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      color="error"
-                      onClick={() => handleDelete(expense.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    <Tooltip title="Edit">
+                      <IconButton
+                        edge="end"
+                        onClick={() => startEdit(expense)}
+                        disabled={loading}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton
+                        edge="end"
+                        color="error"
+                        onClick={() => handleDelete(expense.id)}
+                        disabled={loading}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
                   </>
                 )
               }
@@ -183,7 +219,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
                     }
                     sx={{ width: 150 }}
                   >
-                    {categories.map((cat) => (
+                    {CATEGORIES.map((cat) => (
                       <MenuItem key={cat} value={cat}>
                         {cat}
                       </MenuItem>
@@ -203,5 +239,11 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
     </Box>
   );
 }
+
+ExpenseList.propTypes = {
+  expenses: PropTypes.array.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
+};
 
 export default ExpenseList;
