@@ -11,12 +11,12 @@ import {
 } from "@mui/material";
 
 import SalaryForm from "./SalaryForm";
-import BudgetForm from "./BudgetForm"; // 👈 NEW
+import BudgetForm from "./BudgetForm";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
 import ExpenseTrends from "./ExpenseTrends";
-import { downloadReport } from "../api";
+import { ReportAPI } from "../api"; // ✅ use ReportAPI
 
 /** ================== LOADING OVERLAY ================== */
 const LoadingOverlay = ({ message = "Refreshing data..." }) => (
@@ -89,18 +89,19 @@ const Reports = ({ onDownload }) => (
 function Dashboard({
   currentUser,
   salary,
-  budget, // 👈 NEW
+  budget,
   expenses,
   balance,
   formatCurrency,
   handleSalary,
-  handleBudget, // 👈 NEW
+  handleBudget,
   addExpense,
   updateExpense,
   deleteExpense,
   resetAll,
   logout,
   loading,
+  showToast, // ✅ inject from App.jsx
 }) {
   const [error, setError] = useState("");
 
@@ -108,7 +109,7 @@ function Dashboard({
   const handleDownload = async (format) => {
     try {
       setError("");
-      await downloadReport(currentUser, format);
+      await ReportAPI.download(currentUser, format);
     } catch (err) {
       console.error("❌ Error downloading report:", err);
       setError(`Failed to download ${format.toUpperCase()} report`);
@@ -117,20 +118,16 @@ function Dashboard({
 
   return (
     <Box sx={{ p: 3, position: "relative" }}>
-      {/* Overlay */}
       {loading && <LoadingOverlay />}
 
-      {/* Header */}
       <Header currentUser={currentUser} onLogout={logout} />
 
-      {/* Error banner */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      {/* Main Content */}
       <Grid container spacing={3}>
         {/* Left: Salary + Budget + Balance */}
         <Grid item xs={12} md={4}>
@@ -138,6 +135,7 @@ function Dashboard({
             email={currentUser}
             salary={salary}
             onSalaryUpdate={handleSalary}
+            showToast={showToast} // ✅ added
           />
 
           <Box sx={{ mt: 2 }}>
@@ -145,13 +143,14 @@ function Dashboard({
               email={currentUser}
               budget={budget}
               onBudgetUpdate={handleBudget}
+              showToast={showToast} // ✅ added
             />
           </Box>
 
           <Box sx={{ mt: 2 }}>
             <Balance
               salary={formatCurrency(salary)}
-              budget={formatCurrency(budget)} // 👈 show budget
+              budget={formatCurrency(budget)}
               expenses={formatCurrency(
                 expenses.reduce((sum, e) => sum + e.amount, 0)
               )}
@@ -162,7 +161,11 @@ function Dashboard({
 
         {/* Right: Expenses */}
         <Grid item xs={12} md={8}>
-          <ExpenseForm email={currentUser} onExpenseAdd={addExpense} />
+          <ExpenseForm
+            email={currentUser}
+            onExpenseAdd={addExpense}
+            showToast={showToast} // ✅ added
+          />
           <Divider sx={{ my: 2 }} />
           <ExpenseList
             expenses={expenses}
@@ -172,15 +175,12 @@ function Dashboard({
         </Grid>
       </Grid>
 
-      {/* Expense Trends */}
       <Box sx={{ mt: 4 }}>
         <ExpenseTrends email={currentUser} />
       </Box>
 
-      {/* Downloads */}
       <Reports onDownload={handleDownload} />
 
-      {/* Footer */}
       <Box sx={{ textAlign: "center", mt: 3 }}>
         <Button variant="outlined" color="warning" onClick={resetAll}>
           🗑️ Clear All Data

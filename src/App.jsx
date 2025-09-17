@@ -28,7 +28,11 @@ function App() {
   const [booting, setBooting] = useState(true);
 
   // ✅ Snackbar state
-  const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const showToast = (message, severity = "success") => {
     setToast({ open: true, message, severity });
@@ -68,6 +72,7 @@ function App() {
       setBudget(res.budget || 0);
     } catch (err) {
       console.error("❌ Error fetching user data:", err);
+      showToast("❌ Failed to fetch data", "error");
     } finally {
       setLoading(false);
     }
@@ -152,14 +157,19 @@ function App() {
 
   /** ================== AUTH ================== */
   const handleLogin = (email, rememberMe) => {
-    setIsLoggedIn(true);
-    setCurrentUser(email);
+    try {
+      setIsLoggedIn(true);
+      setCurrentUser(email);
 
-    const storage = rememberMe ? localStorage : sessionStorage;
-    storage.setItem("currentUser", email);
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem("currentUser", email);
 
-    refreshUserData(email);
-    showToast("✅ Login successful");
+      refreshUserData(email);
+      showToast("✅ Login successful");
+    } catch (err) {
+      console.error("❌ Login error:", err);
+      showToast("❌ Failed to login", "error");
+    }
   };
 
   const logout = () => {
@@ -172,6 +182,7 @@ function App() {
 
   /** ================== BALANCE ================== */
   const balance = salary - expenses.reduce((a, e) => a + e.amount, 0);
+  // OR if you want salary - budget - expenses: adjust here.
 
   /** ================== CURRENCY ================== */
   const formatCurrency = (value) =>
@@ -180,6 +191,23 @@ function App() {
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(value);
+
+  /** ================== BOOT INITIALIZATION ================== */
+  useEffect(() => {
+    const savedUser =
+      localStorage.getItem("currentUser") ||
+      sessionStorage.getItem("currentUser");
+    const savedDark = localStorage.getItem("darkMode") === "true";
+
+    if (savedUser) {
+      setIsLoggedIn(true);
+      setCurrentUser(savedUser);
+      refreshUserData(savedUser);
+    }
+
+    setDarkMode(savedDark);
+    setBooting(false);
+  }, [refreshUserData]);
 
   /** ================== LOADING BOOT ================== */
   if (booting) {
@@ -208,6 +236,7 @@ function App() {
             const newMode = !darkMode;
             setDarkMode(newMode);
             localStorage.setItem("darkMode", newMode);
+            showToast(`🌗 Dark mode ${newMode ? "enabled" : "disabled"}`, "info");
           }}
           color="inherit"
         >

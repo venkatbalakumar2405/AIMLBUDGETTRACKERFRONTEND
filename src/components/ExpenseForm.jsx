@@ -1,23 +1,26 @@
 import React, { useState } from "react";
 import { Box, TextField, Button } from "@mui/material";
-import { addExpense } from "../api";  // ✅ FIXED
+import { BudgetAPI } from "../api";  // ✅ use BudgetAPI
 
 function ExpenseForm({ email, onExpenseAdd }) {
   const [expense, setExpense] = useState({ name: "", amount: "" });
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await addExpense(email, { 
-        name: expense.name, 
-        amount: Number(expense.amount) 
+      setLoading(true);
+      await BudgetAPI.addExpense(email, {
+        name: expense.name,
+        amount: Number(expense.amount),
       });
-      alert("Expense added!");
       onExpenseAdd();
       setExpense({ name: "", amount: "" });
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error adding expense:", err);
       alert(err.message || "Failed to add expense");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,8 +43,8 @@ function ExpenseForm({ email, onExpenseAdd }) {
         sx={{ mb: 2 }}
         required
       />
-      <Button type="submit" variant="contained" fullWidth>
-        Add Expense
+      <Button type="submit" variant="contained" fullWidth disabled={loading}>
+        {loading ? "Adding..." : "Add Expense"}
       </Button>
     </Box>
   );

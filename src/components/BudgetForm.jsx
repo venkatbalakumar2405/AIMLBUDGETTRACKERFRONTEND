@@ -1,4 +1,3 @@
-// src/components/BudgetForm.jsx
 import React, { useState } from "react";
 import {
   Box,
@@ -7,19 +6,32 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
+import { BudgetAPI } from "../api";
 
-export default function BudgetForm({ email, budget, onBudgetUpdate }) {
+export default function BudgetForm({ email, budget, onBudgetUpdate, showToast }) {
   const [value, setValue] = useState(budget || 0);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!onBudgetUpdate) return;
     const num = Number(value);
+
     if (isNaN(num) || num < 0) {
-      alert("Please enter a valid budget amount");
+      showToast("⚠️ Please enter a valid budget amount", "warning");
       return;
     }
-    onBudgetUpdate(num);
+
+    try {
+      setLoading(true);
+      await BudgetAPI.updateBudget(email, num); // ✅ call backend
+      if (onBudgetUpdate) onBudgetUpdate(num); // 🔄 update parent
+      showToast("✅ Budget updated successfully");
+    } catch (err) {
+      console.error("❌ Error updating budget:", err);
+      showToast("❌ Failed to update budget", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,9 +50,15 @@ export default function BudgetForm({ email, budget, onBudgetUpdate }) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           fullWidth
+          required
         />
-        <Button type="submit" variant="contained" color="secondary">
-          Save
+        <Button
+          type="submit"
+          variant="contained"
+          color="secondary"
+          disabled={loading}
+        >
+          {loading ? "Saving..." : "Save"}
         </Button>
       </Box>
     </Paper>

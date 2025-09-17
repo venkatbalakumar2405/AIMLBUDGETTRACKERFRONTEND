@@ -20,7 +20,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import { getTrends } from "../api"; 
+import { TrendAPI } from "../api"; // ✅ FIXED
 
 /** ================== CONFIG ================== */
 const COLORS = ["#f87171", "#34d399"]; // red, green
@@ -134,7 +134,7 @@ function ExpenseTrends({ email }) {
       setLoading(true);
       setError(null);
 
-      const result = await getTrends(email);
+      const result = await TrendAPI.getTrends(email); // ✅ FIXED
       setData(result);
     } catch (err) {
       console.error("❌ Failed to fetch trends:", err);

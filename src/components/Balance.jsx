@@ -15,18 +15,14 @@ function Balance({ salary, budget, expenses, balance }) {
   const budgetExceedsSalary = budget > salary;
   const balanceNegative = balance < 0;
 
-  // Auto-show snackbar for budget warning
+  // Auto-show/hide snackbar for budget warning
   useEffect(() => {
-    if (budgetExceedsSalary) {
-      setShowBudgetWarning(true);
-    }
+    setShowBudgetWarning(budgetExceedsSalary);
   }, [budgetExceedsSalary]);
 
-  // Auto-show snackbar for negative balance
+  // Auto-show/hide snackbar for negative balance
   useEffect(() => {
-    if (balanceNegative) {
-      setShowNegativeBalance(true);
-    }
+    setShowNegativeBalance(balanceNegative);
   }, [balanceNegative]);
 
   return (
@@ -56,7 +52,7 @@ function Balance({ salary, budget, expenses, balance }) {
           {/* Balance */}
           <Typography
             variant="h6"
-            color={balanceNegative ? "error" : "success.main"}
+            color={balanceNegative ? "error" : "success"}
           >
             💵 Balance: {balance}
           </Typography>

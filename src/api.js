@@ -138,9 +138,9 @@ export const ReportAPI = {
 
 /** ================== TRENDS ================== */
 export const TrendAPI = {
-  monthly: (email) =>
-    safeFetch(`${API_URL}/budget/monthly-trends?email=${encodeURIComponent(email)}`),
-
-  overall: (email) =>
+  getTrends: (email) =>
     safeFetch(`${API_URL}/budget/trends?email=${encodeURIComponent(email)}`),
+
+  getMonthlyTrends: (email) =>
+    safeFetch(`${API_URL}/budget/monthly-trends?email=${encodeURIComponent(email)}`),
 };
