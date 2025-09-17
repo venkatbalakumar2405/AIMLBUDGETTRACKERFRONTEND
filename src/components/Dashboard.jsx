@@ -1,4 +1,3 @@
-// src/components/Dashboard.jsx
 import React, { useState, memo } from "react";
 import {
   Box,
@@ -12,6 +11,7 @@ import {
 } from "@mui/material";
 
 import SalaryForm from "./SalaryForm";
+import BudgetForm from "./BudgetForm"; // 👈 NEW
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList from "./ExpenseList";
 import Balance from "./Balance";
@@ -89,10 +89,12 @@ const Reports = ({ onDownload }) => (
 function Dashboard({
   currentUser,
   salary,
+  budget, // 👈 NEW
   expenses,
   balance,
   formatCurrency,
   handleSalary,
+  handleBudget, // 👈 NEW
   addExpense,
   updateExpense,
   deleteExpense,
@@ -130,16 +132,26 @@ function Dashboard({
 
       {/* Main Content */}
       <Grid container spacing={3}>
-        {/* Left: Salary + Balance */}
+        {/* Left: Salary + Budget + Balance */}
         <Grid item xs={12} md={4}>
           <SalaryForm
             email={currentUser}
             salary={salary}
             onSalaryUpdate={handleSalary}
           />
+
+          <Box sx={{ mt: 2 }}>
+            <BudgetForm
+              email={currentUser}
+              budget={budget}
+              onBudgetUpdate={handleBudget}
+            />
+          </Box>
+
           <Box sx={{ mt: 2 }}>
             <Balance
               salary={formatCurrency(salary)}
+              budget={formatCurrency(budget)} // 👈 show budget
               expenses={formatCurrency(
                 expenses.reduce((sum, e) => sum + e.amount, 0)
               )}
@@ -152,7 +164,11 @@ function Dashboard({
         <Grid item xs={12} md={8}>
           <ExpenseForm email={currentUser} onExpenseAdd={addExpense} />
           <Divider sx={{ my: 2 }} />
-          <ExpenseList expenses={expenses} onDelete={deleteExpense} />
+          <ExpenseList
+            expenses={expenses}
+            onDelete={deleteExpense}
+            onUpdate={updateExpense}
+          />
         </Grid>
       </Grid>
 
