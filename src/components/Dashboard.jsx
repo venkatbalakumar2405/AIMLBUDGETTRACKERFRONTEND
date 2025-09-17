@@ -9,6 +9,15 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
+import {
+  AccountBalanceWallet,
+  PersonOutline,
+  Logout,
+  InsertDriveFile,
+  BarChart,
+  PictureAsPdf,
+  DeleteForever,
+} from "@mui/icons-material";
 
 import SalaryForm from "./SalaryForm";
 import BudgetForm from "./BudgetForm";
@@ -47,15 +56,32 @@ const Header = ({ currentUser, onLogout }) => (
       justifyContent: "space-between",
       alignItems: "center",
       mb: 3,
+      borderRadius: 3,
     }}
   >
-    <Typography variant="h5">💰 Budget Tracker</Typography>
-    <Box>
-      <Typography variant="subtitle1" component="span" sx={{ mr: 2 }}>
-        👋 Welcome, <strong>{currentUser}</strong>
+    {/* App logo + title */}
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <AccountBalanceWallet color="primary" fontSize="large" />
+      <Typography variant="h5" fontWeight={600}>
+        Budget Tracker
       </Typography>
-      <Button variant="contained" color="error" onClick={onLogout}>
-        🚪 Logout
+    </Box>
+
+    {/* Welcome + logout */}
+    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <PersonOutline color="action" />
+        <Typography variant="subtitle1">
+          Welcome, <strong>{currentUser}</strong>
+        </Typography>
+      </Box>
+      <Button
+        variant="contained"
+        color="error"
+        startIcon={<Logout />}
+        onClick={onLogout}
+      >
+        Logout
       </Button>
     </Box>
   </Paper>
@@ -65,18 +91,19 @@ const Header = ({ currentUser, onLogout }) => (
 const Reports = ({ onDownload }) => (
   <Box sx={{ textAlign: "center", mt: 3 }}>
     <Typography variant="h6" gutterBottom>
-      📂 Download Reports
+      Download Reports
     </Typography>
     {[
-      { label: "📄 CSV", format: "csv", color: "primary" },
-      { label: "📊 Excel", format: "excel", color: "success" },
-      { label: "📕 PDF", format: "pdf", color: "secondary" },
+      { label: "CSV", format: "csv", color: "primary", icon: <InsertDriveFile /> },
+      { label: "Excel", format: "excel", color: "success", icon: <BarChart /> },
+      { label: "PDF", format: "pdf", color: "secondary", icon: <PictureAsPdf /> },
     ].map((btn) => (
       <Button
         key={btn.format}
         variant="contained"
         color={btn.color}
         sx={{ m: 1 }}
+        startIcon={btn.icon}
         onClick={() => onDownload(btn.format)}
       >
         {btn.label}
@@ -101,7 +128,7 @@ function Dashboard({
   resetAll,
   logout,
   loading,
-  showToast, // ✅ inject from App.jsx
+  showToast, // ✅ injected from App.jsx
 }) {
   const [error, setError] = useState("");
 
@@ -135,7 +162,7 @@ function Dashboard({
             email={currentUser}
             salary={salary}
             onSalaryUpdate={handleSalary}
-            showToast={showToast} // ✅ added
+            showToast={showToast}
           />
 
           <Box sx={{ mt: 2 }}>
@@ -143,7 +170,7 @@ function Dashboard({
               email={currentUser}
               budget={budget}
               onBudgetUpdate={handleBudget}
-              showToast={showToast} // ✅ added
+              showToast={showToast}
             />
           </Box>
 
@@ -164,7 +191,7 @@ function Dashboard({
           <ExpenseForm
             email={currentUser}
             onExpenseAdd={addExpense}
-            showToast={showToast} // ✅ added
+            showToast={showToast}
           />
           <Divider sx={{ my: 2 }} />
           <ExpenseList
@@ -182,8 +209,13 @@ function Dashboard({
       <Reports onDownload={handleDownload} />
 
       <Box sx={{ textAlign: "center", mt: 3 }}>
-        <Button variant="outlined" color="warning" onClick={resetAll}>
-          🗑️ Clear All Data
+        <Button
+          variant="outlined"
+          color="warning"
+          startIcon={<DeleteForever />}
+          onClick={resetAll}
+        >
+          Clear All Data
         </Button>
       </Box>
     </Box>

@@ -1,24 +1,45 @@
 import React, { useState } from "react";
-import { Box, TextField, Button } from "@mui/material";
-import { BudgetAPI } from "../api";  // ✅ use BudgetAPI
+import { Box, TextField, Button, MenuItem } from "@mui/material";
+import { BudgetAPI } from "../api"; // ✅ use BudgetAPI
 
-function ExpenseForm({ email, onExpenseAdd }) {
-  const [expense, setExpense] = useState({ name: "", amount: "" });
+// ✅ Centralized categories (can later move to constants/config)
+const categories = [
+  "Fuel",
+  "Petrol",
+  "Travel",
+  "Hotel",
+  "Food",
+  "Shopping",
+  "Other",
+];
+
+function ExpenseForm({ email, onExpenseAdd, showToast }) {
+  const [expense, setExpense] = useState({
+    name: "",
+    amount: "",
+    category: "Other",
+  });
   const [loading, setLoading] = useState(false);
 
+  // 🔹 Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
+
       await BudgetAPI.addExpense(email, {
         name: expense.name,
         amount: Number(expense.amount),
+        category: expense.category,
       });
-      onExpenseAdd();
-      setExpense({ name: "", amount: "" });
+
+      onExpenseAdd(); // ✅ refresh parent list
+      setExpense({ name: "", amount: "", category: "Other" });
+
+      showToast?.("✅ Expense added successfully", "success");
     } catch (err) {
       console.error("❌ Error adding expense:", err);
-      alert(err.message || "Failed to add expense");
+      showToast?.("❌ Failed to add expense", "error");
     } finally {
       setLoading(false);
     }
@@ -34,6 +55,7 @@ function ExpenseForm({ email, onExpenseAdd }) {
         sx={{ mb: 2 }}
         required
       />
+
       <TextField
         label="Amount"
         type="number"
@@ -43,7 +65,28 @@ function ExpenseForm({ email, onExpenseAdd }) {
         sx={{ mb: 2 }}
         required
       />
-      <Button type="submit" variant="contained" fullWidth disabled={loading}>
+
+      <TextField
+        select
+        label="Category"
+        value={expense.category}
+        onChange={(e) => setExpense({ ...expense, category: e.target.value })}
+        fullWidth
+        sx={{ mb: 2 }}
+      >
+        {categories.map((cat) => (
+          <MenuItem key={cat} value={cat}>
+            {cat}
+          </MenuItem>
+        ))}
+      </TextField>
+
+      <Button
+        type="submit"
+        variant="contained"
+        fullWidth
+        disabled={loading}
+      >
         {loading ? "Adding..." : "Add Expense"}
       </Button>
     </Box>
