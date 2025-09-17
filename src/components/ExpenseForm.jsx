@@ -9,14 +9,33 @@ import {
 } from "@mui/material";
 import { BudgetAPI } from "../api"; // ✅ use BudgetAPI
 
-/** ================== CATEGORY OPTIONS ================== */
+/** ================== EXPENSE CATEGORIES ================== */
 const CATEGORIES = [
-  "Fuel",
-  "Petrol",
-  "Travel",
-  "Hotel",
-  "Food",
-  "Shopping",
+  // Essential Needs
+  "Groceries",
+  "Utilities (Electricity, Water, Gas)",
+  "Rent / Mortgage",
+  "Transportation (Bus, Metro, Taxi, Car Maintenance)",
+
+  // Lifestyle
+  "Dining Out",
+  "Entertainment (Movies, Subscriptions, Netflix, Spotify)",
+  "Clothing",
+  "Personal Care (Salon, Gym, Wellness)",
+
+  // Financial
+  "Savings / Investments",
+  "Insurance",
+  "Loan / EMI Payments",
+  "Credit Card Payments",
+
+  // Health & Education
+  "Healthcare (Medicines, Doctor visits)",
+  "Education (Courses, Books, School Fees)",
+
+  // Miscellaneous
+  "Gifts & Donations",
+  "Emergency / Unexpected",
   "Other",
 ];
 
@@ -26,20 +45,18 @@ function ExpenseForm({ email, onExpenseAdd, showToast }) {
     name: "",
     amount: "",
     category: "Other",
-    dateTime: new Date().toISOString().slice(0, 16), // ✅ default to now
   });
   const [loading, setLoading] = useState(false);
 
-  /** 🔹 Handle input changes */
+  /** 🔹 Handle input change */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setExpense((prev) => ({ ...prev, [name]: value }));
   };
 
-  /** 🔹 Handle form submit */
+  /** 🔹 Handle submit */
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!expense.name.trim() || Number(expense.amount) <= 0) {
       showToast?.("⚠️ Please enter a valid expense name and amount", "warning");
       return;
@@ -47,24 +64,13 @@ function ExpenseForm({ email, onExpenseAdd, showToast }) {
 
     try {
       setLoading(true);
-
       await BudgetAPI.addExpense(email, {
         name: expense.name.trim(),
         amount: Number(expense.amount),
         category: expense.category,
-        createdAt: new Date(expense.dateTime).toISOString(), // ✅ save timestamp
       });
-
-      onExpenseAdd(); // refresh parent list
-
-      // Reset form
-      setExpense({
-        name: "",
-        amount: "",
-        category: "Other",
-        dateTime: new Date().toISOString().slice(0, 16),
-      });
-
+      onExpenseAdd();
+      setExpense({ name: "", amount: "", category: "Other" });
       showToast?.("✅ Expense added successfully", "success");
     } catch (err) {
       console.error("❌ Error adding expense:", err);
@@ -78,14 +84,8 @@ function ExpenseForm({ email, onExpenseAdd, showToast }) {
     <Box
       component="form"
       onSubmit={handleSubmit}
-      sx={{
-        mb: 2,
-        p: 2,
-        borderRadius: 2,
-        bgcolor: "background.paper",
-      }}
+      sx={{ mb: 2, p: 2, borderRadius: 2, bgcolor: "background.paper" }}
     >
-      {/* Expense Name */}
       <TextField
         name="name"
         label="Expense Name"
@@ -95,8 +95,6 @@ function ExpenseForm({ email, onExpenseAdd, showToast }) {
         sx={{ mb: 2 }}
         required
       />
-
-      {/* Amount */}
       <TextField
         name="amount"
         label="Amount"
@@ -108,8 +106,6 @@ function ExpenseForm({ email, onExpenseAdd, showToast }) {
         sx={{ mb: 2 }}
         required
       />
-
-      {/* Category */}
       <TextField
         select
         name="category"
@@ -125,20 +121,6 @@ function ExpenseForm({ email, onExpenseAdd, showToast }) {
           </MenuItem>
         ))}
       </TextField>
-
-      {/* Date & Time */}
-      <TextField
-        name="dateTime"
-        label="Date & Time"
-        type="datetime-local"
-        value={expense.dateTime}
-        onChange={handleChange}
-        fullWidth
-        sx={{ mb: 2 }}
-        InputLabelProps={{ shrink: true }}
-      />
-
-      {/* Submit */}
       <Button
         type="submit"
         variant="contained"

@@ -15,17 +15,26 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
-
 import { BudgetAPI } from "../api";
 
-/** ================== CATEGORY OPTIONS ================== */
+/** ================== EXPENSE CATEGORIES ================== */
 const CATEGORIES = [
-  "Fuel",
-  "Petrol",
-  "Travel",
-  "Hotel",
-  "Food",
-  "Shopping",
+  "Groceries",
+  "Utilities (Electricity, Water, Gas)",
+  "Rent / Mortgage",
+  "Transportation (Bus, Metro, Taxi, Car Maintenance)",
+  "Dining Out",
+  "Entertainment (Movies, Subscriptions, Netflix, Spotify)",
+  "Clothing",
+  "Personal Care (Salon, Gym, Wellness)",
+  "Savings / Investments",
+  "Insurance",
+  "Loan / EMI Payments",
+  "Credit Card Payments",
+  "Healthcare (Medicines, Doctor visits)",
+  "Education (Courses, Books, School Fees)",
+  "Gifts & Donations",
+  "Emergency / Unexpected",
   "Other",
 ];
 
@@ -56,13 +65,12 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
     setEditData({ name: "", amount: "", category: "Other" });
   };
 
-  /** 🔹 Save changes */
+  /** 🔹 Save edited expense */
   const saveEdit = async () => {
     if (!editData.name.trim() || Number(editData.amount) <= 0) {
       alert("⚠️ Please enter a valid expense name and amount");
       return;
     }
-
     try {
       setLoading(true);
       await BudgetAPI.updateExpense(editingId, {
@@ -70,13 +78,11 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
         amount: Number(editData.amount),
         category: editData.category,
       });
-
       onUpdate(editingId, {
         name: editData.name.trim(),
         amount: Number(editData.amount),
         category: editData.category,
       });
-
       cancelEdit();
     } catch (err) {
       console.error("❌ Error updating expense:", err);
@@ -107,16 +113,9 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
       ? expenses
       : expenses.filter((e) => e.category === filterCategory);
 
-  /** 🔹 Format date nicely */
-  const formatDate = (isoDate) => {
-    if (!isoDate) return "";
-    const d = new Date(isoDate);
-    return d.toLocaleDateString() + " " + d.toLocaleTimeString();
-  };
-
   return (
     <Box>
-      {/* Category filter */}
+      {/* Category Filter */}
       <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
         <TextField
           select
@@ -124,7 +123,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
           size="small"
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: 300 }}
         >
           <MenuItem value="All">All</MenuItem>
           {CATEGORIES.map((cat) => (
@@ -135,7 +134,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
         </TextField>
       </Box>
 
-      {/* Expense list */}
+      {/* Expense List */}
       <List>
         {filteredExpenses.length === 0 ? (
           <Typography
@@ -153,11 +152,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
                 editingId === expense.id ? (
                   <>
                     <Tooltip title="Save">
-                      <IconButton
-                        edge="end"
-                        onClick={saveEdit}
-                        disabled={loading}
-                      >
+                      <IconButton edge="end" onClick={saveEdit} disabled={loading}>
                         <SaveIcon />
                       </IconButton>
                     </Tooltip>
@@ -212,7 +207,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
                         amount: e.target.value,
                       }))
                     }
-                    sx={{ width: 100 }}
+                    sx={{ width: 120 }}
                   />
                   <TextField
                     select
@@ -224,7 +219,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
                         category: e.target.value,
                       }))
                     }
-                    sx={{ width: 150 }}
+                    sx={{ width: 250 }}
                   >
                     {CATEGORIES.map((cat) => (
                       <MenuItem key={cat} value={cat}>
@@ -236,7 +231,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
               ) : (
                 <ListItemText
                   primary={`${expense.name} (${expense.category || "Other"})`}
-                  secondary={`₹${expense.amount} • ${formatDate(expense.date)}`}
+                  secondary={`₹${expense.amount}`}
                 />
               )}
             </ListItem>
@@ -248,15 +243,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
 }
 
 ExpenseList.propTypes = {
-  expenses: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      amount: PropTypes.number.isRequired,
-      category: PropTypes.string,
-      date: PropTypes.string, // ✅ ISO timestamp
-    })
-  ).isRequired,
+  expenses: PropTypes.array.isRequired,
   onDelete: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
 };
