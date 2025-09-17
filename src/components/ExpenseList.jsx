@@ -16,7 +16,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 
-import { BudgetAPI } from "../api"; // ✅ use BudgetAPI
+import { BudgetAPI } from "../api";
 
 /** ================== CATEGORY OPTIONS ================== */
 const CATEGORIES = [
@@ -106,6 +106,13 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
     filterCategory === "All"
       ? expenses
       : expenses.filter((e) => e.category === filterCategory);
+
+  /** 🔹 Format date nicely */
+  const formatDate = (isoDate) => {
+    if (!isoDate) return "";
+    const d = new Date(isoDate);
+    return d.toLocaleDateString() + " " + d.toLocaleTimeString();
+  };
 
   return (
     <Box>
@@ -229,7 +236,7 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
               ) : (
                 <ListItemText
                   primary={`${expense.name} (${expense.category || "Other"})`}
-                  secondary={`₹${expense.amount}`}
+                  secondary={`₹${expense.amount} • ${formatDate(expense.date)}`}
                 />
               )}
             </ListItem>
@@ -241,7 +248,15 @@ function ExpenseList({ expenses, onDelete, onUpdate }) {
 }
 
 ExpenseList.propTypes = {
-  expenses: PropTypes.array.isRequired,
+  expenses: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      amount: PropTypes.number.isRequired,
+      category: PropTypes.string,
+      date: PropTypes.string, // ✅ ISO timestamp
+    })
+  ).isRequired,
   onDelete: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
 };
