@@ -1,5 +1,4 @@
-// ✅ Dynamically use API URL from Vite env
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
 
 /** 🔹 Handle fetch responses */
 async function handleResponse(res) {
@@ -18,10 +17,21 @@ async function handleResponse(res) {
   return data;
 }
 
-/** 🔹 Safe fetch wrapper */
+/** 🔹 Safe fetch wrapper (auto-attach headers) */
 async function safeFetch(url, options = {}) {
+  const token = localStorage.getItem("access_token");
+
+  const finalOptions = {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  };
+
   try {
-    const res = await fetch(url, options);
+    const res = await fetch(url, finalOptions);
     return await handleResponse(res);
   } catch (err) {
     console.error(`❌ Fetch failed: ${url}`, err);
@@ -33,7 +43,6 @@ async function safeFetch(url, options = {}) {
 export function registerUser(email, password) {
   return safeFetch(`${API_URL}/auth/register`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
 }
@@ -41,31 +50,30 @@ export function registerUser(email, password) {
 export function loginUser(email, password) {
   return safeFetch(`${API_URL}/auth/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
 }
 
 export function getProfile(email) {
-  return safeFetch(`${API_URL}/auth/user/${email}`);
+  return safeFetch(`${API_URL}/auth/user/${encodeURIComponent(email)}`);
 }
 
 /** ================== BUDGET ================== */
 export function getExpenses(email) {
-  return safeFetch(`${API_URL}/budget/expenses?email=${email}`);
+  return safeFetch(`${API_URL}/budget/expenses?email=${encodeURIComponent(email)}`);
 }
 
 export function addExpense(email, expense) {
   const payload = {
-    ...expense,
     email,
-    amount: expense.amount ? String(expense.amount).trim() : null,
-    date: expense.date || null,
+    title: expense.title || "Untitled",
+    category: expense.category || "Other",
+    amount: Number(expense.amount) || 0,
+    date: expense.date || new Date().toISOString().slice(0, 10),
   };
 
   return safeFetch(`${API_URL}/budget/add`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 }
@@ -73,29 +81,27 @@ export function addExpense(email, expense) {
 export function updateExpense(id, updatedExpense) {
   return safeFetch(`${API_URL}/budget/update/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updatedExpense),
+    body: JSON.stringify({
+      ...updatedExpense,
+      amount: Number(updatedExpense.amount) || 0,
+    }),
   });
 }
 
 export function deleteExpense(id) {
-  return safeFetch(`${API_URL}/budget/delete/${id}`, {
-    method: "DELETE",
-  });
+  return safeFetch(`${API_URL}/budget/delete/${id}`, { method: "DELETE" });
 }
 
 export function updateSalary(email, salary) {
   return safeFetch(`${API_URL}/budget/salary`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, salary }),
+    body: JSON.stringify({ email, salary: Number(salary) || 0 }),
   });
 }
 
 export function resetAll(email) {
   return safeFetch(`${API_URL}/budget/reset`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
 }
@@ -104,7 +110,7 @@ export function resetAll(email) {
 export async function downloadReport(email, format) {
   try {
     const res = await fetch(
-      `${API_URL}/budget/download-expenses-${format}?email=${email}`
+      `${API_URL}/budget/download-expenses-${format}?email=${encodeURIComponent(email)}`
     );
 
     if (!res.ok) throw new Error(`Failed to download ${format.toUpperCase()}`);
@@ -129,9 +135,11 @@ export async function downloadReport(email, format) {
 
 /** ================== TRENDS ================== */
 export function getMonthlyTrends(email) {
-  return safeFetch(`${API_URL}/budget/monthly-trends?email=${email}`);
+  return safeFetch(
+    `${API_URL}/budget/monthly-trends?email=${encodeURIComponent(email)}`
+  );
 }
 
 export function getTrends(email) {
-  return safeFetch(`${API_URL}/budget/trends?email=${email}`);
+  return safeFetch(`${API_URL}/budget/trends?email=${encodeURIComponent(email)}`);
 }
