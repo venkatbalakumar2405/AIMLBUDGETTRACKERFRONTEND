@@ -15,15 +15,7 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 import Dashboard from "./components/Dashboard";
 import AuthForm from "./components/AuthForm";
 
-import {
-  updateSalary as apiUpdateSalary,
-  addExpense as apiAddExpense,
-  getExpenses as apiGetExpenses,
-  updateExpense as apiUpdateExpense,
-  deleteExpense as apiDeleteExpense,
-  resetAll as apiResetAll,
-  updateBudget as apiUpdateBudget,
-} from "./api";
+import { AuthAPI, BudgetAPI, ReportAPI, TrendAPI } from "./api";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -64,7 +56,7 @@ function App() {
     if (!email) return;
     try {
       setLoading(true);
-      const res = await apiGetExpenses(email);
+      const res = await BudgetAPI.getExpenses(email);
 
       if (res.error === "Unauthorized") {
         logout();
@@ -86,7 +78,7 @@ function App() {
     const newSalary = Number(amount);
     setSalary(newSalary);
     try {
-      await apiUpdateSalary(currentUser, newSalary);
+      await BudgetAPI.updateSalary(currentUser, newSalary);
       refreshUserData(currentUser);
       showToast("✅ Salary updated successfully");
     } catch (err) {
@@ -100,7 +92,7 @@ function App() {
     const newBudget = Number(amount);
     setBudget(newBudget);
     try {
-      await apiUpdateBudget(currentUser, newBudget);
+      await BudgetAPI.updateBudget(currentUser, newBudget);
       refreshUserData(currentUser);
       showToast("✅ Budget updated successfully");
     } catch (err) {
@@ -112,7 +104,7 @@ function App() {
   /** ================== EXPENSES ================== */
   const addExpense = async (expense) => {
     try {
-      await apiAddExpense(currentUser, expense);
+      await BudgetAPI.addExpense(currentUser, expense);
       refreshUserData(currentUser);
       showToast("✅ Expense added");
     } catch (err) {
@@ -123,7 +115,7 @@ function App() {
 
   const updateExpense = async (id, updatedExpense) => {
     try {
-      await apiUpdateExpense(id, updatedExpense);
+      await BudgetAPI.updateExpense(id, updatedExpense);
       refreshUserData(currentUser);
       showToast("✅ Expense updated");
     } catch (err) {
@@ -134,7 +126,7 @@ function App() {
 
   const deleteExpense = async (id) => {
     try {
-      await apiDeleteExpense(id);
+      await BudgetAPI.deleteExpense(id);
       refreshUserData(currentUser);
       showToast("🗑️ Expense deleted");
     } catch (err) {
@@ -146,7 +138,7 @@ function App() {
   const resetAll = async () => {
     if (window.confirm("Clear all data?")) {
       try {
-        await apiResetAll(currentUser);
+        await BudgetAPI.resetAll(currentUser);
         setSalary(0);
         setBudget(0);
         setExpenses([]);

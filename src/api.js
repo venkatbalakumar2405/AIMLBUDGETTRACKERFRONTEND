@@ -1,15 +1,18 @@
-// ✅ Dynamically use API URL from Vite env
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
+
+/** ================== UTILS ================== */
+/** 🔹 Parse JSON safely */
+async function parseJSON(res) {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
 
 /** 🔹 Handle fetch responses */
 async function handleResponse(res) {
-  let data = {};
-  try {
-    data = await res.json();
-  } catch {
-    // If backend sends no JSON (like file downloads), fallback to {}
-  }
-
+  const data = await parseJSON(res);
   if (!res.ok) {
     const errorMsg =
       data.error || data.message || `HTTP ${res.status}: ${res.statusText}`;
@@ -18,19 +21,16 @@ async function handleResponse(res) {
   return data;
 }
 
-/** 🔹 Safe fetch wrapper with auth token support */
+/** 🔹 Safe fetch wrapper with token support */
 async function safeFetch(url, options = {}) {
   const token = localStorage.getItem("access_token");
 
   const headers = {
-    ...(options.headers || {}),
     "Content-Type": "application/json",
+    ...(options.headers || {}),
   };
 
-  // 🔑 Auto-attach Authorization header if token exists
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   try {
     const res = await fetch(url, { ...options, headers });
@@ -42,107 +42,105 @@ async function safeFetch(url, options = {}) {
 }
 
 /** ================== AUTH ================== */
-export function registerUser(email, password) {
-  return safeFetch(`${API_URL}/auth/register`, {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
-}
+export const AuthAPI = {
+  register: (email, password) =>
+    safeFetch(`${API_URL}/auth/register`, {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
 
-export function loginUser(email, password) {
-  return safeFetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
-}
+  login: (email, password) =>
+    safeFetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
 
-export function getProfile(email) {
-  return safeFetch(`${API_URL}/auth/user/${email}`);
-}
+  profile: (email) => safeFetch(`${API_URL}/auth/user/${email}`),
+};
 
 /** ================== BUDGET ================== */
-export function getExpenses(email) {
-  return safeFetch(`${API_URL}/budget/expenses?email=${email}`);
-}
+export const BudgetAPI = {
+  getExpenses: (email) =>
+    safeFetch(`${API_URL}/budget/expenses?email=${encodeURIComponent(email)}`),
 
-export function addExpense(email, expense) {
-  const payload = {
-    ...expense,
-    email,
-    amount: expense.amount ? String(expense.amount).trim() : null,
-    date: expense.date || null,
-  };
+  addExpense: (email, expense) =>
+    safeFetch(`${API_URL}/budget/add`, {
+      method: "POST",
+      body: JSON.stringify({
+        ...expense,
+        email,
+        amount: expense.amount ? String(expense.amount).trim() : null,
+        date: expense.date || null,
+      }),
+    }),
 
-  return safeFetch(`${API_URL}/budget/add`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
+  updateExpense: (id, expense) =>
+    safeFetch(`${API_URL}/budget/update/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(expense),
+    }),
 
-export function updateExpense(id, updatedExpense) {
-  return safeFetch(`${API_URL}/budget/update/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(updatedExpense),
-  });
-}
+  deleteExpense: (id) =>
+    safeFetch(`${API_URL}/budget/delete/${id}`, { method: "DELETE" }),
 
-export function deleteExpense(id) {
-  return safeFetch(`${API_URL}/budget/delete/${id}`, {
-    method: "DELETE",
-  });
-}
+  updateSalary: (email, salary) =>
+    safeFetch(`${API_URL}/budget/salary`, {
+      method: "PUT",
+      body: JSON.stringify({ email, salary }),
+    }),
 
-export function updateSalary(email, salary) {
-  return safeFetch(`${API_URL}/budget/salary`, {
-    method: "PUT",
-    body: JSON.stringify({ email, salary }),
-  });
-}
+  updateBudget: (email, budget) =>
+    safeFetch(`${API_URL}/budget/budget`, {
+      method: "PUT",
+      body: JSON.stringify({ email, budget }),
+    }),
 
-export function resetAll(email) {
-  return safeFetch(`${API_URL}/budget/reset`, {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
-}
+  resetAll: (email) =>
+    safeFetch(`${API_URL}/budget/reset`, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+};
 
 /** ================== REPORTS ================== */
-export async function downloadReport(email, format) {
-  try {
-    const token = localStorage.getItem("access_token");
+export const ReportAPI = {
+  async download(email, format) {
+    try {
+      const token = localStorage.getItem("access_token");
 
-    const res = await fetch(
-      `${API_URL}/budget/download-expenses-${format}?email=${email}`,
-      {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }
-    );
+      const res = await fetch(
+        `${API_URL}/budget/download-expenses-${format}?email=${encodeURIComponent(
+          email
+        )}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
 
-    if (!res.ok) throw new Error(`Failed to download ${format.toUpperCase()}`);
+      if (!res.ok) throw new Error(`Failed to download ${format.toUpperCase()}`);
 
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
 
-    const extMap = { csv: "csv", excel: "xlsx", pdf: "pdf" };
-    const ext = extMap[format] || format;
+      const extMap = { csv: "csv", excel: "xlsx", pdf: "pdf" };
+      const ext = extMap[format] || format;
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `expenses_${new Date().toISOString().slice(0, 10)}.${ext}`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } catch (err) {
-    console.error("❌ Download error:", err);
-    alert(err.message);
-  }
-}
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `expenses_${new Date().toISOString().slice(0, 10)}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("❌ Download error:", err);
+      alert(err.message);
+    }
+  },
+};
 
 /** ================== TRENDS ================== */
-export function getMonthlyTrends(email) {
-  return safeFetch(`${API_URL}/budget/monthly-trends?email=${email}`);
-}
+export const TrendAPI = {
+  monthly: (email) =>
+    safeFetch(`${API_URL}/budget/monthly-trends?email=${encodeURIComponent(email)}`),
 
-export function getTrends(email) {
-  return safeFetch(`${API_URL}/budget/trends?email=${email}`);
-}
+  overall: (email) =>
+    safeFetch(`${API_URL}/budget/trends?email=${encodeURIComponent(email)}`),
+};
