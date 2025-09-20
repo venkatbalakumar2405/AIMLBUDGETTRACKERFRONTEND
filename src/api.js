@@ -55,7 +55,7 @@ export const AuthAPI = {
       body: JSON.stringify({ email, password }),
     }),
 
-  profile: (email) => safeFetch(`${API_URL}/auth/user/${email}`),
+  profile: (email) => safeFetch(`${API_URL}/auth/user/${encodeURIComponent(email)}`),
 };
 
 /** ================== BUDGET ================== */
@@ -107,11 +107,8 @@ export const ReportAPI = {
   async download(email, format) {
     try {
       const token = localStorage.getItem("access_token");
-
       const res = await fetch(
-        `${API_URL}/budget/download-expenses-${format}?email=${encodeURIComponent(
-          email
-        )}`,
+        `${API_URL}/budget/download-expenses-${format}?email=${encodeURIComponent(email)}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
 
@@ -138,9 +135,11 @@ export const ReportAPI = {
 
 /** ================== TRENDS ================== */
 export const TrendAPI = {
+  /** 🔹 Get overall trends (salary, category, monthly) */
   getTrends: (email) =>
     safeFetch(`${API_URL}/budget/trends?email=${encodeURIComponent(email)}`),
 
+  /** 🔹 Get monthly-only trends (without category breakdown) */
   getMonthlyTrends: (email) =>
     safeFetch(`${API_URL}/budget/monthly-trends?email=${encodeURIComponent(email)}`),
 };

@@ -1,173 +1,91 @@
-import React, { useEffect, useState, useCallback, memo } from "react";
+import React from "react"; 
 import {
   Box,
   Typography,
   Paper,
-  CircularProgress,
-  Button,
+  Grid,
 } from "@mui/material";
 import {
   PieChart,
   Pie,
   Cell,
-  Tooltip,
   LineChart,
   Line,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
+  Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine,
 } from "recharts";
-import { TrendAPI } from "../api"; // ✅ FIXED
 
-/** ================== CONFIG ================== */
-const COLORS = ["#f87171", "#34d399"]; // red, green
+const samplePieData = [
+  { name: "Salary", value: 60000 },
+  { name: "Expenses", value: 45137.5 },
+];
 
-/** ================== UI STATES ================== */
-const LoadingState = () => (
-  <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-    <CircularProgress />
-  </Box>
-);
+const sampleLineData = [
+  { date: "2025-09-16", salary: 60000, spent: 12500 },
+  { date: "2025-09-17", salary: 60000, spent: 30000 },
+  { date: "2025-09-18", salary: 60000, spent: 45137.5 },
+];
 
-const ErrorState = ({ message, onRetry }) => (
-  <Box sx={{ mt: 4, textAlign: "center" }}>
-    <Typography color="error" gutterBottom>
-      {message}
-    </Typography>
-    <Button variant="contained" onClick={onRetry}>
-      Retry
-    </Button>
-  </Box>
-);
+const COLORS = ["#22c55e", "#ef4444"];
 
-const EmptyState = () => (
-  <Typography sx={{ mt: 4, textAlign: "center" }}>
-    No trend data available yet.
-  </Typography>
-);
-
-/** ================== PIE CHART ================== */
-const ExpensesPie = ({ expenses, savings }) => {
-  const pieData = [
-    { name: "Expenses", value: expenses || 0 },
-    { name: "Savings", value: savings || 0 },
-  ];
-
-  return (
-    <Paper sx={{ flex: "1 1 300px", height: 300, p: 2 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={pieData}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius="80%"
-            label
-          >
-            {pieData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip />
-        </PieChart>
-      </ResponsiveContainer>
-    </Paper>
-  );
-};
-
-/** ================== LINE CHART ================== */
-const ExpensesLine = ({ expenses, salary, budget }) => {
-  let cumulative = 0;
-  const lineData = Array.isArray(expenses)
-    ? expenses.map((e) => {
-        cumulative += Number(e.amount) || 0;
-        return {
-          date: e.date,
-          spent: cumulative,
-          salary: salary || 0,
-          budget: budget || 0,
-        };
-      })
-    : [];
-
-  return (
-    <Paper sx={{ flex: "2 1 500px", height: 300, p: 2 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={lineData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-
-          <Line type="monotone" dataKey="salary" stroke="#2563eb" />
-          <Line type="monotone" dataKey="spent" stroke="#f87171" />
-
-          {budget > 0 && (
-            <ReferenceLine
-              y={budget}
-              label="Budget Limit"
-              stroke="#ff0000"
-              strokeDasharray="5 5"
-            />
-          )}
-        </LineChart>
-      </ResponsiveContainer>
-    </Paper>
-  );
-};
-
-/** ================== MAIN COMPONENT ================== */
-function ExpenseTrends({ email }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchTrends = useCallback(async () => {
-    if (!email) return;
-    try {
-      setLoading(true);
-      setError(null);
-
-      const result = await TrendAPI.getTrends(email); // ✅ FIXED
-      setData(result);
-    } catch (err) {
-      console.error("❌ Failed to fetch trends:", err);
-      setError("Failed to load trends. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, [email]);
-
-  useEffect(() => {
-    fetchTrends();
-  }, [fetchTrends]);
-
-  if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={fetchTrends} />;
-  if (!data) return <EmptyState />;
-
+function ExpenseTrendsStatic() {
   return (
     <Box sx={{ mt: 4 }}>
       <Typography variant="h6" gutterBottom>
-        📈 Expense Trends
+        📊 Expense Trends
       </Typography>
 
-      <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-        <ExpensesPie expenses={data.total_expenses} savings={data.savings} />
-        <ExpensesLine
-          expenses={data.expenses}
-          salary={data.salary}
-          budget={data.budget}
-        />
-      </Box>
+      <Grid container spacing={2}>
+        {/* Pie Chart */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2, height: 350, background: "#111", color: "#fff" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={samplePieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={120}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {samplePieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid>
+
+        {/* Line Chart */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2, height: 350, background: "#111", color: "#fff" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sampleLineData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                {/* Blue Salary Line */}
+                <Line type="monotone" dataKey="salary" stroke="#3b82f6" name="Salary" />
+                {/* Red Expenses Line */}
+                <Line type="monotone" dataKey="spent" stroke="#ef4444" name="Expenses" />
+              </LineChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 }
 
-export default memo(ExpenseTrends);
+export default ExpenseTrendsStatic;

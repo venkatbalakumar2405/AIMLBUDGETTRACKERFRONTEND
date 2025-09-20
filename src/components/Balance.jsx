@@ -12,6 +12,10 @@ import {
   ListItemText,
   Drawer,
   IconButton,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
 } from "@mui/material";
 import {
   PieChart,
@@ -21,6 +25,11 @@ import {
   ResponsiveContainer,
   Legend,
   Sector,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
 } from "recharts";
 import CountUp from "react-countup";
 import { motion, AnimatePresence } from "framer-motion";
@@ -56,16 +65,43 @@ function Balance({ salary, budget, expenses, balance, expenseList }) {
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // 🔹 Year filter state
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const yearOptions = Array.from({ length: 71 }, (_, i) => 2000 + i);
+
   const budgetExceedsSalary = budget > salary;
   const balanceNegative = balance < 0;
 
-  // 🔹 Category totals
+  // 🔹 Filtered expenses by year
+  const filteredExpenseList = expenseList.filter((e) => {
+    if (!e.date) return false;
+    const expenseYear = new Date(e.date).getFullYear();
+    return expenseYear === selectedYear;
+  });
+
+  // 🔹 Category totals (filtered)
   const categoryTotals = categories.map((cat) => ({
     name: cat,
-    value: expenseList
+    value: filteredExpenseList
       .filter((e) => (e.category || "Other") === cat)
       .reduce((sum, e) => sum + e.amount, 0),
   }));
+
+  // 🔹 Yearly summary data (group by month from filtered list)
+  const months = [
+    "Jan","Feb","Mar","Apr","May","Jun",
+    "Jul","Aug","Sep","Oct","Nov","Dec",
+  ];
+
+  const yearlyData = months.map((m, i) => {
+    const monthExpenses = filteredExpenseList
+      .filter((e) => new Date(e.date).getMonth() === i)
+      .reduce((sum, e) => sum + e.amount, 0);
+    return { month: m, expenses: monthExpenses };
+  });
+
+  const yearlyTotal = yearlyData.reduce((sum, m) => sum + m.expenses, 0);
+  const yearlyAvg = (yearlyTotal / 12).toFixed(0);
 
   // 🔹 Auto-show/hide warnings
   useEffect(() => setShowBudgetWarning(budgetExceedsSalary), [budgetExceedsSalary]);
@@ -86,7 +122,8 @@ function Balance({ salary, budget, expenses, balance, expenseList }) {
   };
 
   // 🔹 Detail panel data
-  const selectedCategory = selectedIndex !== null ? categoryTotals[selectedIndex] : null;
+  const selectedCategory =
+    selectedIndex !== null ? categoryTotals[selectedIndex] : null;
   const expenseTotal = expenses || 1; // avoid division by zero
 
   return (
@@ -142,6 +179,22 @@ function Balance({ salary, budget, expenses, balance, expenseList }) {
             </Typography>
 
             <Divider sx={{ my: 2 }} />
+
+            {/* Year Filter */}
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+              <InputLabel id="year-select-label">Filter by Year</InputLabel>
+              <Select
+                labelId="year-select-label"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+              >
+                {yearOptions.map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             {/* Category Breakdown */}
             <Typography variant="subtitle1" gutterBottom>
@@ -234,6 +287,32 @@ function Balance({ salary, budget, expenses, balance, expenseList }) {
                   </PieChart>
                 </ResponsiveContainer>
               </Box>
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Yearly Summary */}
+            <Typography variant="subtitle1" gutterBottom>
+              📆 Yearly Summary ({selectedYear})
+            </Typography>
+            <Typography>
+              🔹 Total Yearly Expenses: ₹{yearlyTotal.toLocaleString()}
+            </Typography>
+            <Typography>
+              🔹 Average Monthly Expenses: ₹{yearlyAvg.toLocaleString()}
+            </Typography>
+
+            <Box sx={{ mt: 2, height: 250 }}>
+              <ResponsiveContainer>
+                <BarChart data={yearlyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="expenses" fill="#1976d2" name="Monthly Expenses" />
+                </BarChart>
+              </ResponsiveContainer>
             </Box>
           </CardContent>
         </Card>
