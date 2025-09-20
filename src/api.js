@@ -55,20 +55,21 @@ export const AuthAPI = {
       body: JSON.stringify({ email, password }),
     }),
 
-  profile: (email) => safeFetch(`${API_URL}/auth/user/${encodeURIComponent(email)}`),
+  /** 🔹 Profile still uses email because backend route is /auth/user/<email> */
+  profile: (email) =>
+    safeFetch(`${API_URL}/auth/user/${encodeURIComponent(email)}`),
 };
 
 /** ================== BUDGET ================== */
 export const BudgetAPI = {
-  getExpenses: (email) =>
-    safeFetch(`${API_URL}/budget/expenses?email=${encodeURIComponent(email)}`),
+  /** Expenses now fetched via token, not email param */
+  getExpenses: () => safeFetch(`${API_URL}/budget/expenses`),
 
-  addExpense: (email, expense) =>
+  addExpense: (expense) =>
     safeFetch(`${API_URL}/budget/add`, {
       method: "POST",
       body: JSON.stringify({
         ...expense,
-        email,
         amount: expense.amount ? String(expense.amount).trim() : null,
         date: expense.date || null,
       }),
@@ -83,34 +84,32 @@ export const BudgetAPI = {
   deleteExpense: (id) =>
     safeFetch(`${API_URL}/budget/delete/${id}`, { method: "DELETE" }),
 
-  updateSalary: (email, salary) =>
-    safeFetch(`${API_URL}/budget/salary`, {
-      method: "PUT",
-      body: JSON.stringify({ email, salary }),
+  updateSalary: (salary) =>
+    safeFetch(`${API_URL}/salary/add`, {
+      method: "POST",
+      body: JSON.stringify({ amount: salary }),
     }),
 
-  updateBudget: (email, budget) =>
-    safeFetch(`${API_URL}/budget/budget`, {
+  updateBudget: (budget) =>
+    safeFetch(`${API_URL}/budget/set-budget`, {
       method: "PUT",
-      body: JSON.stringify({ email, budget }),
+      body: JSON.stringify({ budget_limit: budget }),
     }),
 
-  resetAll: (email) =>
+  resetAll: () =>
     safeFetch(`${API_URL}/budget/reset`, {
       method: "POST",
-      body: JSON.stringify({ email }),
     }),
 };
 
 /** ================== REPORTS ================== */
 export const ReportAPI = {
-  async download(email, format) {
+  async download(format) {
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(
-        `${API_URL}/budget/download-expenses-${format}?email=${encodeURIComponent(email)}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-      );
+      const res = await fetch(`${API_URL}/budget/download-expenses-${format}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
 
       if (!res.ok) throw new Error(`Failed to download ${format.toUpperCase()}`);
 
@@ -136,10 +135,8 @@ export const ReportAPI = {
 /** ================== TRENDS ================== */
 export const TrendAPI = {
   /** 🔹 Get overall trends (salary, category, monthly) */
-  getTrends: (email) =>
-    safeFetch(`${API_URL}/budget/trends?email=${encodeURIComponent(email)}`),
+  getTrends: () => safeFetch(`${API_URL}/budget/trends`),
 
   /** 🔹 Get monthly-only trends (without category breakdown) */
-  getMonthlyTrends: (email) =>
-    safeFetch(`${API_URL}/budget/monthly-trends?email=${encodeURIComponent(email)}`),
+  getMonthlyTrends: () => safeFetch(`${API_URL}/budget/monthly-trends`),
 };
