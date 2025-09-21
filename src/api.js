@@ -5,7 +5,7 @@
 const API_URL =
   import.meta.env.VITE_API_URL ||
   (import.meta.env.MODE === "development"
-    ? "http://127.0.0.1:5000"
+    ? "http://localhost:5000" // ✅ use localhost to match frontend
     : "https://aimlbudgettracker.onrender.com");
 
 /** ================== HELPERS ================== */
@@ -38,7 +38,12 @@ async function safeFetch(url, options = {}) {
   if (token) headers.Authorization = `Bearer ${token}`;
 
   try {
-    const res = await fetch(url, { ...options, headers });
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      mode: "cors", // ✅ explicit
+      credentials: "include", // ✅ handle cookies if backend sets them
+    });
     return await handleResponse(res);
   } catch (err) {
     console.error(`❌ Fetch failed: ${url}`, err);
@@ -115,6 +120,7 @@ export const ReportAPI = {
       const token = localStorage.getItem("access_token");
       const res = await fetch(`${API_URL}/budget/download/${format}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        mode: "cors",
       });
 
       if (!res.ok) throw new Error(`Failed to download ${format.toUpperCase()}`);
