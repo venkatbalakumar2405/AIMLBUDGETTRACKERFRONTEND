@@ -1,13 +1,14 @@
 // src/api.js
 
+/** ================== CONFIG ================== */
 // ✅ Decide API URL based on environment
-const API_URL = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL
-  : (import.meta.env.MODE === "development"
-      ? "http://127.0.0.1:5000"
-      : "https://aimlbudgettracker.onrender.com");
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.MODE === "development"
+    ? "http://127.0.0.1:5000"
+    : "https://aimlbudgettracker.onrender.com");
 
-/** ================== UTILS ================== */
+/** ================== HELPERS ================== */
 async function parseJSON(res) {
   try {
     return await res.json();
@@ -104,8 +105,7 @@ export const BudgetAPI = {
     safeFetch(`${API_URL}/expenses/${id}`, { method: "DELETE" }),
 
   /** 🔹 Reset all */
-  resetAll: (email) =>
-    safeFetch(`${API_URL}/budget/reset`, { method: "DELETE" }),
+  resetAll: () => safeFetch(`${API_URL}/budget/reset`, { method: "DELETE" }),
 };
 
 /** ================== REPORTS ================== */
