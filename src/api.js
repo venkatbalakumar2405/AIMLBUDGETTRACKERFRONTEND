@@ -1,7 +1,12 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
+// src/api.js
+
+// ✅ Use Render backend in production, fallback to local in dev
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://aimlbudgettracker.onrender.com" ||
+  "http://127.0.0.1:5000";
 
 /** ================== UTILS ================== */
-/** 🔹 Parse JSON safely */
 async function parseJSON(res) {
   try {
     return await res.json();
@@ -10,7 +15,6 @@ async function parseJSON(res) {
   }
 }
 
-/** 🔹 Handle fetch responses */
 async function handleResponse(res) {
   const data = await parseJSON(res);
   if (!res.ok) {
@@ -21,7 +25,6 @@ async function handleResponse(res) {
   return data;
 }
 
-/** 🔹 Safe fetch wrapper with token support */
 async function safeFetch(url, options = {}) {
   const token = localStorage.getItem("access_token");
 
@@ -55,51 +58,53 @@ export const AuthAPI = {
       body: JSON.stringify({ email, password }),
     }),
 
-  /** 🔹 Profile still uses email because backend route is /auth/user/<email> */
   profile: (email) =>
     safeFetch(`${API_URL}/auth/user/${encodeURIComponent(email)}`),
 };
 
-/** ================== BUDGET ================== */
+/** ================== BUDGET + SALARY + EXPENSES ================== */
 export const BudgetAPI = {
-  /** Expenses now fetched via token, not email param */
-  getExpenses: () => safeFetch(`${API_URL}/budget/expenses`),
+  /** 🔹 Salary */
+  updateSalary: (email, amount) =>
+    safeFetch(`${API_URL}/salaries`, {
+      method: "POST",
+      body: JSON.stringify({ email, amount }),
+    }),
 
-  addExpense: (expense) =>
-    safeFetch(`${API_URL}/budget/add`, {
+  /** 🔹 Budget */
+  updateBudget: (email, amount) =>
+    safeFetch(`${API_URL}/budget`, {
+      method: "POST",
+      body: JSON.stringify({ email, amount }),
+    }),
+
+  /** 🔹 Expenses */
+  getExpenses: () => safeFetch(`${API_URL}/expenses`),
+
+  addExpense: (email, expense) =>
+    safeFetch(`${API_URL}/expenses`, {
       method: "POST",
       body: JSON.stringify({
         ...expense,
-        amount: expense.amount ? String(expense.amount).trim() : null,
+        amount: expense.amount
+          ? parseFloat(expense.amount).toFixed(2)
+          : null,
         date: expense.date || null,
       }),
     }),
 
   updateExpense: (id, expense) =>
-    safeFetch(`${API_URL}/budget/update/${id}`, {
+    safeFetch(`${API_URL}/expenses/${id}`, {
       method: "PUT",
       body: JSON.stringify(expense),
     }),
 
   deleteExpense: (id) =>
-    safeFetch(`${API_URL}/budget/delete/${id}`, { method: "DELETE" }),
+    safeFetch(`${API_URL}/expenses/${id}`, { method: "DELETE" }),
 
-  updateSalary: (salary) =>
-    safeFetch(`${API_URL}/salary/add`, {
-      method: "POST",
-      body: JSON.stringify({ amount: salary }),
-    }),
-
-  updateBudget: (budget) =>
-    safeFetch(`${API_URL}/budget/set-budget`, {
-      method: "PUT",
-      body: JSON.stringify({ budget_limit: budget }),
-    }),
-
-  resetAll: () =>
-    safeFetch(`${API_URL}/budget/reset`, {
-      method: "POST",
-    }),
+  /** 🔹 Reset all */
+  resetAll: (email) =>
+    safeFetch(`${API_URL}/budget/reset`, { method: "DELETE" }),
 };
 
 /** ================== REPORTS ================== */
@@ -107,7 +112,7 @@ export const ReportAPI = {
   async download(format) {
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_URL}/budget/download-expenses-${format}`, {
+      const res = await fetch(`${API_URL}/budget/download/${format}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -134,9 +139,6 @@ export const ReportAPI = {
 
 /** ================== TRENDS ================== */
 export const TrendAPI = {
-  /** 🔹 Get overall trends (salary, category, monthly) */
-  getTrends: () => safeFetch(`${API_URL}/budget/trends`),
-
-  /** 🔹 Get monthly-only trends (without category breakdown) */
-  getMonthlyTrends: () => safeFetch(`${API_URL}/budget/monthly-trends`),
+  getTrends: () => safeFetch(`${API_URL}/trends`),
+  getMonthlyTrends: () => safeFetch(`${API_URL}/trends/monthly`),
 };
